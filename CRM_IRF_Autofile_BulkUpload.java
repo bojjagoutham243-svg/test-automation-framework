@@ -83,7 +83,7 @@ public class CRM_IRF_Autofile_BulkUpload {
             // ================= NAVIGATION =================
             WebElement onBoardMenu = wait.until(
                     ExpectedConditions.elementToBeClickable(
-                            By.xpath("//*[contains(text(),'On Board')]")
+                            By.xpath("(//p[normalize-space()='On Boardings'])[1]")
                     )
             );
             onBoardMenu.click();
