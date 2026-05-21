@@ -519,6 +519,7 @@ public class RoleManagement {
 	/**
 	 * Mac-compatible clear + type used for all text fields.
 	 */
+	@SuppressWarnings("unused")
 	private static void clearAndType(WebDriverWait wait, JavascriptExecutor js, By locator, String value) {
 		WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
 		js.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", el);
@@ -534,6 +535,7 @@ public class RoleManagement {
 	/**
 	 * Selects a visible dropdown option by exact text.
 	 */
+	@SuppressWarnings("unused")
 	private static void selectDropdownOption(WebDriver driver, WebDriverWait wait, JavascriptExecutor js,
 			By dropdownLocator, String optionText) throws InterruptedException {
 
@@ -577,6 +579,7 @@ public class RoleManagement {
 	}
 
 	/** Scrolls to a button by id and JS-clicks it. */
+	@SuppressWarnings("unused")
 	private static void clickById(WebDriverWait wait, JavascriptExecutor js, String id) {
 		WebElement btn = scrollIntoView(wait, js, By.id(id));
 		js.executeScript("arguments[0].click();", btn);
@@ -587,6 +590,7 @@ public class RoleManagement {
 	 * Waits for a toast, validates its message, clicks it to dismiss, then waits
 	 * until it fully disappears before returning.
 	 */
+	@SuppressWarnings("unused")
 	private static void validateToast(WebDriverWait wait, String expectedFragment, String passLabel, String failLabel) {
 		WebElement toast = wait
 				.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.toast_content_subtitle")));
@@ -688,6 +692,7 @@ public class RoleManagement {
 		return set;
 	}
 
+	@SuppressWarnings("unused")
 	private static String badge(String value) {
 		return value.isEmpty() ? "❌ EMPTY" : "✅ " + value;
 	}

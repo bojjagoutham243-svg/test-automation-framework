@@ -31,7 +31,9 @@ public class VendorManagement {
 	private static final String EXP_COUNTRY = "India";
 
 	// Access section – exact option labels in the dropdowns
+	@SuppressWarnings("unused")
 	private static final String PRODUCT_TYPE = "AC Charger"; // validated: AC Charger / DC Charger
+	@SuppressWarnings("unused")
 	private static final String SERVICE_TYPE = "Task"; // validated: Task / Ticket
 
 	// Picks only VISIBLE, interactive dropdown options
@@ -708,6 +710,7 @@ public class VendorManagement {
 		el.sendKeys(value);
 	}
 
+	@SuppressWarnings("unused")
 	private static WebElement scrollIntoView(WebDriverWait wait, JavascriptExecutor js, By locator) {
 		WebElement el = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
 		js.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", el);
