@@ -30,6 +30,7 @@ public class crm_IRF_Creation {
         String accountName = "Kia India Pvt Ltd";
         String productType = "AC Charger";   // change to "DC Charger" when needed
         String customerType = "Corporate";  // can be "Corporate", "Individual", etc.
+        String filePath = "/Users/gouthambojja/Desktop/file-sample_150kB.pdf";
 
         // ================= LOGIN =================
         driver.findElement(By.name("phone")).sendKeys(mobile);
@@ -282,7 +283,6 @@ public class crm_IRF_Creation {
         //
 
         // ---------- FILE PATH ----------
-        String filePath = "/Users/gouthambojja/Desktop/file-sample_150kB.pdf";
         File file = new File(filePath);
 
         if (!file.exists()) {
