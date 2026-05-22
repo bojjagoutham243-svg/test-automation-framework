@@ -398,123 +398,176 @@ public class VendorManagement {
 		}
 
 		System.out.println("✅ Vendor Profile Mapping circle validation completed successfully");
-
-		// ════════════════════════════════════════════════════════════════════
-		// STEP : SELECT PROFILE TYPE = TAT BASED
-		// ════════════════════════════════════════════════════════════════════
-		System.out.println("\n========== Selecting Profile Type ==========");
-
-		WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(20));
-		JavascriptExecutor js1 = (JavascriptExecutor) driver;
-
-		By profileTypeLocator =
-		        By.xpath("(//input[contains(@class,'crm__dropdown__input')])[2]");
-
-		// Wait for element
-		WebElement profileTypeField = wait1.until(
-		        ExpectedConditions.elementToBeClickable(profileTypeLocator)
-		);
-
-		// Scroll
-		js1.executeScript(
-		        "arguments[0].scrollIntoView({block:'center'});",
-		        profileTypeField
-		);
-
-		Thread.sleep(1000);
-
-		// Click dropdown
-		js1.executeScript("arguments[0].click();", profileTypeField);
-
-		Thread.sleep(1000);
-
-		// Re-find element after DOM refresh
-		profileTypeField = wait1.until(
-		        ExpectedConditions.presenceOfElementLocated(profileTypeLocator)
-		);
-
-		// Use Actions instead of direct sendKeys
-		Actions actions = new Actions(driver);
-
-		actions.moveToElement(profileTypeField)
-		        .click()
-		        .sendKeys("TAT Based")
-		        .pause(Duration.ofSeconds(2))
-		        .sendKeys(Keys.ARROW_DOWN)
-		        .sendKeys(Keys.ENTER)
-		        .perform();
-
-		System.out.println("✅ Selected Profile Type : TAT Based");
-		// ════════════════════════════════════════════════════════════════════
-		// STEP 14: SELECT PROFILE NAME - FIRST VALUE
-		// ════════════════════════════════════════════════════════════════════
-		System.out.println("\n========== Selecting Profile Name ==========");
-
-		// Click Profile Name dropdown
-		WebElement profileNameDropdown = wait1.until(ExpectedConditions
-				.elementToBeClickable(By.xpath("(//div[contains(@class,'crm__dropdown__control')])[4]")));
-
-		js1.executeScript("arguments[0].scrollIntoView({block:'center'});", profileNameDropdown);
-
-		Thread.sleep(500);
-
-		js1.executeScript("arguments[0].click();", profileNameDropdown);
-
-		System.out.println("✅ Clicked Profile Name dropdown");
-
-		Thread.sleep(1500);
-
-		// Select first option
-		WebElement firstProfile = wait1.until(ExpectedConditions
-				.visibilityOfElementLocated(By.xpath("(//div[contains(@class,'crm__dropdown__option')])[1]")));
-
-		String selectedProfile = firstProfile.getText().trim();
-
-		js1.executeScript("arguments[0].click();", firstProfile);
-
-		System.out.println("✅ Selected Profile Name : " + selectedProfile);
-
-		Thread.sleep(1500);
-		// ════════════════════════════════════════════════════════════════════
-		// STEP 15: CLICK APPLY TO ALL CHECKBOX
-		// ════════════════════════════════════════════════════════════════════
-		System.out.println("\n========== Apply To All ==========");
-
-		WebElement applyAllCheckbox = wait1.until(ExpectedConditions
-				.elementToBeClickable(By.xpath("//span[text()='Apply to All']/preceding-sibling::button")));
-
-		js1.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", applyAllCheckbox);
-
-		js1.executeScript("arguments[0].click();", applyAllCheckbox);
-
-		System.out.println("✅ Apply To All checkbox clicked");
-		Thread.sleep(1000);
-
-		// ════════════════════════════════════════════════════════════════════
-		// STEP 16: CLICK SAVE BUTTON
-		// ════════════════════════════════════════════════════════════════════
-		System.out.println("\n========== Saving Vendor Mapping ==========");
-
-		WebElement saveBtn = wait1.until(ExpectedConditions.elementToBeClickable(By.id("update-user")));
-
-		js1.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", saveBtn);
-
-		js1.executeScript("arguments[0].click();", saveBtn);
-
-		System.out.println("✅ Clicked: Save button");
-
+//		// ════════════════════════════════════════════════════════════════════
+//		// STEP : SELECT PROFILE TYPE = TAT BASED
+//		// ════════════════════════════════════════════════════════════════════
+//		System.out.println("\n========== Selecting Profile Type ==========");
+//
+//		WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(20));
+//		JavascriptExecutor js1 = (JavascriptExecutor) driver;
+//
+//		By profileTypeLocator = By
+//				.xpath("//div[text()='Profile Type']/following::div[contains(@class,'crm__dropdown__control')][1]");
+//
+//		// Wait for element
+//		WebElement profileTypeField = wait1.until(ExpectedConditions.elementToBeClickable(profileTypeLocator));
+//
+//		// Scroll
+//		js1.executeScript("arguments[0].scrollIntoView({block:'center'});", profileTypeField);
+//
+//		Thread.sleep(1000);
+//
+//		// Click dropdown
+//		js1.executeScript("arguments[0].click();", profileTypeField);
+//
+//		Thread.sleep(1000);
+//
+//		// Re-find element after DOM refresh
+//		profileTypeField = wait1.until(ExpectedConditions.presenceOfElementLocated(profileTypeLocator));
+//
+//		// Use Actions instead of direct sendKeys
+//		Actions actions = new Actions(driver);
+//
+//		actions.moveToElement(profileTypeField).click().sendKeys("TAT Based").pause(Duration.ofSeconds(2))
+//				.sendKeys(Keys.ARROW_DOWN).sendKeys(Keys.ENTER).perform();
+//		Thread.sleep(4000);
+//		System.out.println("✅ Selected Profile Type : TAT Based");
+//		// ════════════════════════════════════════════════════════════════════
+//		// STEP 14: SELECT PROFILE NAME - FIRST VALUE
+//		// ════════════════════════════════════════════════════════════════════
+//		System.out.println("\n========== Selecting Profile Name ==========");
+//
+//		// Click Profile Name dropdown
+//		WebElement profileNameDropdown = wait1.until(ExpectedConditions
+//				.elementToBeClickable(By.xpath("(//div[contains(@class,'crm__dropdown__control')])[16]")));
+//
+//		js1.executeScript("arguments[0].scrollIntoView({block:'center'});", profileNameDropdown);
+//
+//		Thread.sleep(500);
+//
+//		js1.executeScript("arguments[0].click();", profileNameDropdown);
+//
+//		System.out.println("✅ Clicked Profile Name dropdown");
+//
+//		Thread.sleep(1500);
+//
+//		// Select first option
+//		WebElement firstProfile = wait1.until(ExpectedConditions
+//				.visibilityOfElementLocated(By.xpath("(//div[contains(@class,'crm__dropdown__option')])[1]")));
+//
+//		String selectedProfile = firstProfile.getText().trim();
+//
+//		js1.executeScript("arguments[0].click();", firstProfile);
+//
+//		System.out.println("✅ Selected Profile Name : " + selectedProfile);
+//
+//		Thread.sleep(1500);
+//		// ════════════════════════════════════════════════════════════════════
+//		// STEP 15: CLICK APPLY TO ALL CHECKBOX
+//		// ════════════════════════════════════════════════════════════════════
+//		System.out.println("\n========== Apply To All ==========");
+//
+//		WebElement applyAllCheckbox = wait1.until(ExpectedConditions
+//				.elementToBeClickable(By.xpath("//span[text()='Apply to All']/preceding-sibling::button")));
+//
+//		js1.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", applyAllCheckbox);
+//
+//		js1.executeScript("arguments[0].click();", applyAllCheckbox);
+//
+//		System.out.println("✅ Apply To All checkbox clicked");
+//		Thread.sleep(1000);
+//
+//		// ════════════════════════════════════════════════════════════════════
+//		// STEP 16: CLICK SAVE BUTTON
+//		// ════════════════════════════════════════════════════════════════════
+//		System.out.println("\n========== Saving Vendor Mapping ==========");
+//
+//		WebElement saveBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("update-user")));
+//
+//		js.executeScript("arguments[0].scrollIntoView({behavior:'smooth',block:'center'});", saveBtn);
+//
+//		js.executeScript("arguments[0].click();", saveBtn);
+//
+//		System.out.println("✅ Clicked: Save button");
+//
 		// ════════════════════════════════════════════════════════════════════
 		// STEP 17: VALIDATE SUCCESS TOAST
 		// ════════════════════════════════════════════════════════════════════
+		// This code is not required once the vendor profile mapping issue is resolved
+		// ////
+		WebElement icon = new WebDriverWait(driver, Duration.ofSeconds(20))
+				.until(ExpectedConditions.elementToBeClickable(By
+						.xpath("//div[contains(@class,'crm__icon') and contains(@class,'crm__cancel__large__icon')]")));
+		((JavascriptExecutor) driver).executeScript("arguments[0].click();", icon);
+
+		WebElement updateBtn = new WebDriverWait(driver, Duration.ofSeconds(20))
+				.until(ExpectedConditions.elementToBeClickable(By.id("update-vendor")));
+
+		updateBtn.click();
 		System.out.println("\n========== Toast Validation ==========");
 
-		validateAndDismissToast(wait1, "Vendor has been successfully updated.", "Vendor Profile Mapping Updated");
+		validateAndDismissToast(wait, "Vendor has been successfully updated.", "Vendor Profile Mapping Updated");
 		System.out.println("✅ Vendor Profile Mapping completed successfully");
 
+		// ════════════════════════════════════════════════════════════════════
+		// STEP 18: DB CLEANUP – Delete test vendor
+		// ════════════════════════════════════════════════════════════════════
+		System.out.println("\n========== DB Cleanup ==========");
+		deleteVendorFromDB(VENDOR_NAME);
+		System.out.println("========== DB Cleanup Done ==========\n");
 		driver.quit();
 		System.out.println("\n🎉 Vendor Management – Create Vendor completed successfully!");
 	}
 
+	// ════════════════════════════════════════════════════════════════════════
+	// DB CLEANUP – Delete vendor and all related records
+	// ════════════════════════════════════════════════════════════════════════
+	private static void deleteVendorFromDB(String vendorName) {
+		String url = "jdbc:postgresql://172.26.35.4:5432/exicom_crm_dev";
+		String user = "hw_goutham";
+		String pass = "9qIE0mwg8ehN";
+
+		String sql = """
+				WITH target_vendor AS (
+				    SELECT id FROM vendor WHERE name = ?
+				),
+				delete_city AS (
+				    DELETE FROM vendor_city
+				    WHERE vendor_id IN (SELECT id FROM target_vendor)
+				),
+				delete_pincode AS (
+				    DELETE FROM vendor_pincode
+				    WHERE vendor_id IN (SELECT id FROM target_vendor)
+				),
+				delete_circle AS (
+				    DELETE FROM vendors_circle
+				    WHERE vendor_id IN (SELECT id FROM target_vendor)
+				),
+				delete_account AS (
+				    DELETE FROM vendors_account
+				    WHERE vendor_id IN (SELECT id FROM target_vendor)
+				)
+				DELETE FROM vendor
+				WHERE id IN (SELECT id FROM target_vendor)
+				""";
+
+		try (Connection con = DriverManager.getConnection(url, user, pass);
+				PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, vendorName);
+			int rowsDeleted = ps.executeUpdate();
+
+			if (rowsDeleted > 0) {
+				System.out.println("✅ DB Cleanup: Vendor '" + vendorName + "' deleted successfully.");
+			} else {
+				System.out.println("⚠️  DB Cleanup: No vendor found with name '" + vendorName + "'. Nothing deleted.");
+			}
+
+		} catch (SQLException e) {
+			System.err.println("❌ DB Cleanup FAILED for vendor: " + vendorName);
+			e.printStackTrace();
+		}
+	}
 	// ════════════════════════════════════════════════════════════════════════
 	// DROPDOWN HELPERS
 	// ════════════════════════════════════════════════════════════════════════
@@ -733,7 +786,8 @@ public class VendorManagement {
 		String url = "jdbc:postgresql://172.26.35.4:5432/exicom_crm_dev";
 		String user = "hw_goutham";
 		String pass = "9qIE0mwg8ehN";
-
+//		String user = "hw_sachin";
+//		String pass = "DXhp9C6yt235";
 		try (Connection con = DriverManager.getConnection(url, user, pass);
 				PreparedStatement ps = con.prepareStatement(
 						"SELECT otp FROM otp WHERE mobile_number = ? " + "ORDER BY create_time DESC LIMIT 1")) {
