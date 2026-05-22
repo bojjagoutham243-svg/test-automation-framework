@@ -7,7 +7,7 @@ import java.sql.*;
 import java.time.Duration;
 import java.util.List;
 
-public class UserCreation {
+public class UserManagement {
 
     // ── Shared wait timeout ──────────────────────────────────────────────────
     private static final int WAIT_SEC = 20;

@@ -640,7 +640,6 @@ public class VendorManagement {
 					+ "' | Actual: '" + actualValue + "'");
 		}
 	}
-
 	/**
 	 * Types into a React-Select search-able dropdown and selects the first matching
 	 * result.
@@ -784,10 +783,10 @@ public class VendorManagement {
 	public static String getOTPFromDB(String mobile) {
 		String otp = "";
 		String url = "jdbc:postgresql://172.26.35.4:5432/exicom_crm_dev";
-		String user = "hw_goutham";
-		String pass = "9qIE0mwg8ehN";
-//		String user = "hw_sachin";
-//		String pass = "DXhp9C6yt235";
+//		String user = "hw_goutham";
+//		String pass = "9qIE0mwg8ehN";
+		String user = "hw_sachin";
+		String pass = "Uk7bUR0ry5Zz";
 		try (Connection con = DriverManager.getConnection(url, user, pass);
 				PreparedStatement ps = con.prepareStatement(
 						"SELECT otp FROM otp WHERE mobile_number = ? " + "ORDER BY create_time DESC LIMIT 1")) {
