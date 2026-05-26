@@ -1,10 +1,19 @@
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.*;
+import java.nio.file.*;
 import java.sql.*;
 import java.time.Duration;
 import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TicketReport {
 
@@ -13,10 +22,24 @@ public class TicketReport {
     private static WebDriverWait wait;
     private static JavascriptExecutor js;
 
+    // ── Download directory (absolute path) ───────────────────────────────────
+    private static final String DOWNLOAD_DIR =
+            System.getProperty("user.home") + File.separator + "Downloads";
+
     public static void main(String[] args) throws Exception {
 
         WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
+
+        // ── Configure Chrome to download without dialog ───────────────────────
+        ChromeOptions options = new ChromeOptions();
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("download.default_directory", DOWNLOAD_DIR);
+        prefs.put("download.prompt_for_download", false);
+        prefs.put("download.directory_upgrade", true);
+        prefs.put("safebrowsing.enabled", true);
+        options.setExperimentalOption("prefs", prefs);
+
+        driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(WAIT_SEC));
         js = (JavascriptExecutor) driver;
 
@@ -105,12 +128,8 @@ public class TicketReport {
                 By.cssSelector("div.Toastify__toast-container")));
 
         // ── STEP 9: Capture the LATEST (top) row ─────────────────────────────
-        // MUI DataGrid splits into two DOM zones:
-        //   • MuiDataGrid-pinnedColumns        → jobId (pinned left column)
-        //   • MuiDataGrid-virtualScrollerRenderZone → all other columns
         Thread.sleep(2000);
 
-        // Job ID lives in the PINNED zone
         WebElement pinnedTopRow = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//div[contains(@class,'MuiDataGrid-pinnedColumns')]" +
                          "//div[@role='row' and @data-rowindex='0']")));
@@ -121,7 +140,6 @@ public class TicketReport {
         String capturedJobId = jobIdCell.getAttribute("title").trim();
         System.out.println("✅ Captured Latest Job ID: " + capturedJobId);
 
-        // All other columns live in the SCROLLABLE render zone
         WebElement scrollableTopRow = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]" +
                          "//div[@role='row' and @data-rowindex='0']")));
@@ -141,7 +159,6 @@ public class TicketReport {
         System.out.println("✅ Ticket Status: \"" + ticketStatus + "\"");
 
         // ── STEP 12: Validate Status label is "Pending" ──────────────────────
-        // FIX: was incorrectly referencing undefined 'topRow' — now uses scrollableTopRow
         List<WebElement> pendingLabelList = scrollableTopRow.findElements(
                 By.xpath(".//p[@id='labelPending']"));
         if (!pendingLabelList.isEmpty() && pendingLabelList.get(0).getText().trim().equals("Pending")) {
@@ -155,7 +172,6 @@ public class TicketReport {
         }
 
         // ── STEP 13: Validate download button is DISABLED for Pending row ─────
-        // FIX: was incorrectly referencing undefined 'topRow' — now uses scrollableTopRow
         List<WebElement> disabledDownload = scrollableTopRow.findElements(
                 By.xpath(".//div[contains(@class,'crm__bulk__upload__disabled__download__file')]"));
         if (!disabledDownload.isEmpty()) {
@@ -164,10 +180,9 @@ public class TicketReport {
             throw new RuntimeException("❌ TEST FAILED – Disabled download icon not found for Pending row");
         }
 
-        // ── STEP 14: Poll every 30s (max 10 min) until job is Completed or Failed
-        System.out.println("⏳ Polling every 30s for Job ID: " + capturedJobId + " to complete (max 10 min)...");
-        // pollUntilJobDone returns the scrollable-zone row (which has status label + download button)
-        WebElement completedRow = pollUntilJobDone(capturedJobId, 30, 20); // 30s × 20 = 10 min
+        // ── STEP 14: Poll every 25s (max 3 min) until job is Completed or Failed
+        System.out.println("⏳ Polling every 25s for Job ID: " + capturedJobId + " to complete (max 3 min)...");
+        WebElement completedRow = pollUntilJobDone(capturedJobId, 25, 7);
 
         // ── STEP 15: Click the Download button for the Completed row ──────────
         WebElement downloadBtn = completedRow.findElement(
@@ -176,27 +191,174 @@ public class TicketReport {
         js.executeScript("arguments[0].click();", downloadBtn);
         System.out.println("✅ Clicked: Download button for Job ID: " + capturedJobId);
 
+        // ── STEP 16: Wait for the Excel file to appear in Downloads ───────────
+        // File name pattern: Ticket_Report<JOBID><date>.xlsx
+        // We match by the Job ID letters portion only (e.g. "JOB05266553")
+        System.out.println("⏳ Waiting for downloaded Excel file containing Job ID: " + capturedJobId + "...");
+        File downloadedFile = waitForDownloadedFile(DOWNLOAD_DIR, capturedJobId, 60);
+        System.out.println("✅ Downloaded file found: " + downloadedFile.getName());
+
+        // ── STEP 17–22: Open Excel and validate required fields are not null ───
+        validateExcelFields(downloadedFile);
+
         System.out.println("\n🎉 Ticket Report flow completed successfully!");
         Thread.sleep(2000);
         driver.quit();
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // POLLING HELPER
+    // STEP 16 – WAIT FOR DOWNLOADED FILE
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * Refreshes the page every {@code intervalSec} seconds (up to {@code maxAttempts} times),
-     * re-selects "Ticket Report" from the dropdown after each refresh, then looks for the
-     * target Job ID row.
-     *
-     * Returns the SCROLLABLE-ZONE row WebElement (which holds status label + download button).
-     *
-     * Terminal conditions:
-     *   - labelCompleted found → returns the scrollable row WebElement
-     *   - labelFailed   found → throws RuntimeException (test fails immediately)
-     *   - maxAttempts exhausted → throws RuntimeException (timeout)
+     * Polls the download directory every second for up to {@code timeoutSec} seconds,
+     * looking for a fully downloaded .xlsx file whose name contains the given Job ID.
+     * Ignores Chrome's in-progress ".crdownload" partial files.
      */
+    private static File waitForDownloadedFile(String downloadDir, String jobId, int timeoutSec)
+            throws InterruptedException {
+
+        long deadline = System.currentTimeMillis() + (timeoutSec * 1000L);
+
+        while (System.currentTimeMillis() < deadline) {
+            File dir = new File(downloadDir);
+            File[] candidates = dir.listFiles((d, name) ->
+                    name.contains(jobId) &&
+                    name.toLowerCase().endsWith(".xlsx") &&
+                    !name.endsWith(".crdownload"));
+
+            if (candidates != null && candidates.length > 0) {
+                // If multiple matches, return the most recently modified one
+                File latest = candidates[0];
+                for (File f : candidates) {
+                    if (f.lastModified() > latest.lastModified()) latest = f;
+                }
+                return latest;
+            }
+            Thread.sleep(1000);
+        }
+        throw new RuntimeException(
+                "❌ TEST FAILED – Downloaded Excel file containing Job ID [" + jobId +
+                "] not found in [" + downloadDir + "] within " + timeoutSec + " seconds.");
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // STEPS 17–22 – EXCEL FIELD VALIDATION  (not-null check only)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Opens the downloaded Excel report, finds the first data row, and asserts
+     * that every required column is non-null / non-empty.
+     * No value matching is performed — values change per run.
+     * Test fails as soon as the summary is printed if any field is empty.
+     */
+    private static void validateExcelFields(File excelFile) throws Exception {
+
+        System.out.println("\n📄 Opening Excel file for validation: " + excelFile.getName());
+
+        // All columns that must NOT be null/empty
+        List<String> requiredColumns = Arrays.asList(
+                "Ticket ID",
+                "Date of Complaint",
+                "Created By",
+                "Source",
+                "Call Type",
+                "Category",
+                "Sub Category",
+                "Account Name",
+                "Product Type",
+                "Charger Serial No",
+                "Part Number",
+                "Product Name",
+                "Warranty Status",
+                "Customer Type",
+                "Customer Name",
+                "Customer Number",
+                "Vendors Mapped",
+                "Ageing",
+                "Status",
+                "Pending At",
+                "Pending Since",
+                "On Call Resolve",
+                "Backend closure",
+                "First Time Resolve",
+                "Urgency",
+                "Commissioning Date"
+        );
+
+        try (FileInputStream fis = new FileInputStream(excelFile);
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            // ── STEP 17: Select the first sheet ───────────────────────────────
+            Sheet sheet = workbook.getSheetAt(0);
+            System.out.println("✅ Opened sheet: \"" + sheet.getSheetName() + "\"");
+
+            // ── STEP 18: Locate header row and build column-index map ──────────
+            Row headerRow = null;
+            for (Row row : sheet) {
+                Cell firstCell = row.getCell(0);
+                if (firstCell != null && !getCellValueAsString(firstCell).trim().isEmpty()) {
+                    headerRow = row;
+                    break;
+                }
+            }
+            if (headerRow == null)
+                throw new RuntimeException("❌ TEST FAILED – Header row not found in Excel file.");
+
+            Map<String, Integer> colIndex = new HashMap<>();
+            for (Cell cell : headerRow) {
+                String header = getCellValueAsString(cell).trim();
+                if (!header.isEmpty()) colIndex.put(header, cell.getColumnIndex());
+            }
+            System.out.println("✅ Header columns mapped: " + colIndex.keySet());
+
+            // Verify every required column exists in the header
+            for (String col : requiredColumns) {
+                if (!colIndex.containsKey(col))
+                    throw new RuntimeException(
+                            "❌ TEST FAILED – Column \"" + col +
+                            "\" not found in Excel header. Available: " + colIndex.keySet());
+            }
+
+            // ── STEP 19: Use the first data row (row after header) ────────────
+            int    firstDataRowNum = headerRow.getRowNum() + 1;
+            Row    targetRow       = sheet.getRow(firstDataRowNum);
+            if (targetRow == null)
+                throw new RuntimeException("❌ TEST FAILED – No data rows found in Excel file.");
+
+            String ticketId = getCellValueAsString(targetRow.getCell(colIndex.get("Ticket ID"))).trim();
+            System.out.println("✅ Validating row with Ticket ID: \"" + ticketId + "\"");
+
+            // ── STEPS 20–22: Not-null check for every required column ──────────
+            boolean allPassed = true;
+            System.out.println("\n📋 Not-null validation for all required fields:");
+
+            for (String fieldName : requiredColumns) {
+                Cell   cell        = targetRow.getCell(colIndex.get(fieldName));
+                String actualValue = getCellValueAsString(cell).trim();
+
+                if (actualValue.isEmpty()) {
+                    System.out.println("   ❌ FAIL – \"" + fieldName + "\" is NULL/EMPTY");
+                    allPassed = false;
+                } else {
+                    System.out.println("   ✅ PASS – \"" + fieldName + "\": \"" + actualValue + "\"");
+                }
+            }
+
+            // ── Final result ──────────────────────────────────────────────────
+            if (!allPassed)
+                throw new RuntimeException(
+                        "❌ TEST FAILED – One or more fields are NULL/EMPTY. See log above.");
+
+            System.out.println("\n✅ All " + requiredColumns.size() +
+                               " fields are non-null for Ticket ID: \"" + ticketId + "\"");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // POLLING HELPER
+    // ════════════════════════════════════════════════════════════════════════
+
     private static WebElement pollUntilJobDone(String jobId, int intervalSec, int maxAttempts)
             throws InterruptedException {
 
@@ -208,7 +370,6 @@ public class TicketReport {
             driver.navigate().refresh();
             Thread.sleep(2000);
 
-            // Re-navigate: sidebar Reports → sub-menu Reports
             slowScrollTo(By.xpath(
                     "//p[contains(@class,'crm__sidebar__text') and normalize-space()='Reports']"));
             clickByText(wait, "Reports");
@@ -218,7 +379,6 @@ public class TicketReport {
             slowScrollTo(By.xpath("(//*[text()='Reports'])[2]"));
             subMenu.click();
 
-            // Re-select Ticket Report from dropdown
             WebElement ddInput = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//div[contains(@class,'crm__dropdown__input-container')]" +
                              "//input[@role='combobox']")));
@@ -233,7 +393,6 @@ public class TicketReport {
             ddOption.click();
             Thread.sleep(1500);
 
-            // ── FIX: Look for the Job ID in the PINNED zone first ────────────
             List<WebElement> pinnedRows = driver.findElements(
                     By.xpath("//div[contains(@class,'MuiDataGrid-pinnedColumns')]" +
                              "//div[@role='row' and " +
@@ -246,11 +405,8 @@ public class TicketReport {
                 continue;
             }
 
-            // Get the data-rowindex of the matched pinned row
             String rowIndex = pinnedRows.get(0).getAttribute("data-rowindex");
 
-            // ── Find the SAME row in the SCROLLABLE zone by rowindex ──────────
-            // Status label + download button both live here
             List<WebElement> scrollableRows = driver.findElements(
                     By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]" +
                              "//div[@role='row' and @data-rowindex='" + rowIndex + "']"));
@@ -263,21 +419,18 @@ public class TicketReport {
 
             WebElement row = scrollableRows.get(0);
 
-            // ── Check for FAILED status → fail the test immediately ───────────
             List<WebElement> failedLabel = row.findElements(By.xpath(".//p[@id='labelFailed']"));
             if (!failedLabel.isEmpty()) {
                 throw new RuntimeException(
                         "❌ TEST FAILED – Job ID " + jobId + " status is FAILED. Aborting test.");
             }
 
-            // ── Check for COMPLETED status → return the scrollable row ─────────
             List<WebElement> completedLabel = row.findElements(By.xpath(".//p[@id='labelCompleted']"));
             if (!completedLabel.isEmpty()) {
                 System.out.println("✅ Job ID " + jobId + " is Completed after attempt " + attempt);
                 return row;
             }
 
-            // ── Still Pending / Processing → wait and retry ───────────────────
             String currentStatus = "unknown";
             List<WebElement> pendingLbl    = row.findElements(By.xpath(".//p[@id='labelPending']"));
             List<WebElement> processingLbl = row.findElements(By.xpath(".//p[contains(@id,'label')]"));
@@ -300,6 +453,16 @@ public class TicketReport {
     // HELPERS
     // ════════════════════════════════════════════════════════════════════════
 
+    /**
+     * Reads a cell's value as a plain String, handling all common cell types:
+     * STRING, NUMERIC (including dates), BOOLEAN, FORMULA, and BLANK.
+     */
+    private static String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        DataFormatter formatter = new DataFormatter();
+        return formatter.formatCellValue(cell).trim();
+    }
+
     private static void slowScrollTo(By locator) throws InterruptedException {
         slowScrollTo(locator, 800);
     }
@@ -319,10 +482,6 @@ public class TicketReport {
         wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//*[contains(text(),'" + text + "')]"))).click();
         System.out.println("✅ Clicked: " + text);
-    }
-
-    private static boolean isElementPresent(By locator) {
-        return !driver.findElements(locator).isEmpty();
     }
 
     private static String waitForOTP(String mobile, int retries, long delayMs)
