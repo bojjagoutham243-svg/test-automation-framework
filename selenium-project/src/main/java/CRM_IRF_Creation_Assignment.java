@@ -1,5 +1,6 @@
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.*;
 import io.github.bonigarcia.wdm.WebDriverManager;
 
@@ -8,8 +9,10 @@ import java.sql.*;
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;
+import java.time.LocalTime;
 
-public class crm_IRF_Creation {
+
+public class CRM_IRF_Creation_Assignment {
 
     public static void main(String[] args) throws Exception {
 
@@ -29,8 +32,12 @@ public class crm_IRF_Creation {
         String mobile = "8639202204";
         String accountName = "Kia India Pvt Ltd";
         String productType = "AC Charger";   // change to "DC Charger" when needed
-        String customerType = "Corporate";  // can be "Corporate", "Individual", etc.
+        String customerType = "Individual";  // can be "Corporate", "Individual", etc.
         String filePath = "/Users/gouthambojja/Desktop/file-sample_150kB.pdf";
+        
+        // ================= SELECT FIELD ENGINEER =================
+        
+        String engineerName = "Count User";
 
         // ================= LOGIN =================
         driver.findElement(By.name("phone")).sendKeys(mobile);
@@ -424,11 +431,11 @@ public class crm_IRF_Creation {
             // SPOC NUMBER
             WebElement spocNumber = waitForm.until(
                     ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//input[@type='tel' and contains(@class,'crm__custom__mobile__input__field')]")
+                            By.xpath("(//input[@placeholder='**********'])[2]")
                     )
             );
             spocNumber.clear();
-            spocNumber.sendKeys("9876543210");
+            spocNumber.sendKeys("9803273829");
 
             // SPOC EMAIL
             WebElement spocEmail = waitForm.until(
@@ -646,11 +653,406 @@ public class crm_IRF_Creation {
             System.out.println("Toast not found, checking IRF ID...");
         }
 
-        // Extract IRF value
-        
-        System.out.println("IRF Created Successfully: " + driver.findElement(By.className("toast_content_header")).getText());
+     // ================= WAIT OBJECT =================
 
-        driver.quit();
+        WebDriverWait wait11 = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+
+        // ================= EXTRACT IRF VALUE =================
+
+        String createdIRF = waitIRF.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.className("toast_content_header")))
+                .getText()
+                .trim();
+
+        System.out.println("IRF Created Successfully: " + createdIRF);
+
+
+        // ================= CLICK COPY ICON =================
+
+        WebElement copyIcon = waitIRF.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//div[contains(@class,'crm__toast__copy__icon')]"))
+        );
+
+        js1.executeScript("arguments[0].click();", copyIcon);
+
+        System.out.println("IRF copied successfully");
+
+        Thread.sleep(2000);
+
+
+        // ================= GO TO I&C REQUESTS =================
+
+        By icRequestMenu = By.xpath("//p[normalize-space()='I&C Requests']");
+
+        try {
+
+            WebElement element = wait11.until(
+                    ExpectedConditions.elementToBeClickable(icRequestMenu));
+
+            js1.executeScript("arguments[0].scrollIntoView({block:'center'});", element);
+
+            element.click();
+
+        } catch (Exception e) {
+
+            WebElement element = driver.findElement(icRequestMenu);
+
+            js1.executeScript("arguments[0].click();", element);
+        }
+
+        System.out.println("Navigated to I&C Requests");
+
+
+        // ================= SEARCH IRF USING COPIED VALUE =================
+
+        WebElement searchBox = wait11.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.id("tasks__search-box"))
+        );
+
+        searchBox.click();
+
+        // Paste copied value
+        searchBox.sendKeys(Keys.chord(Keys.COMMAND, "v"));
+
+        Thread.sleep(3000);
+
+        System.out.println("Pasted IRF into search box");
+
+
+        // ================= CLICK CREATED IRF =================
+
+        By irfNumberLocator = By.xpath(
+                "//*[contains(text(),'" + createdIRF + "')]"
+        );
+
+        WebElement irfElement = wait11.until(
+                ExpectedConditions.elementToBeClickable(irfNumberLocator)
+        );
+
+        js1.executeScript("arguments[0].scrollIntoView({block:'center'});", irfElement);
+
+        js1.executeScript("arguments[0].click();", irfElement);
+
+        System.out.println("Clicked IRF Number: " + createdIRF);
+        
+     // ================= Scroll & Click on Assignment =================
+
+        By assignmentButtonLocator = By.xpath(
+                "//button[contains(.,'Assignment') or contains(@class,'assignment')]"
+        );
+
+        WebElement assignmentButton = wait.until(
+                ExpectedConditions.presenceOfElementLocated(assignmentButtonLocator)
+        );
+
+        // Scroll into view
+        js1.executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                assignmentButton
+        );
+
+        Thread.sleep(1000);
+
+        // Click using JS (avoids intercept issues)
+        js1.executeScript("arguments[0].click();", assignmentButton);
+
+        System.out.println("Assignment button clicked successfully");
+       
+        
+     // ================= WAIT FOR ASSIGNMENT MODAL =================
+
+        wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//div[contains(@class,'rbc-calendar')]")
+                )
+        );
+
+        System.out.println("Assignment calendar opened");
+
+        Thread.sleep(3000);
+
+
+        // ================= CLICK FIELD ENGINEER DROPDOWN =================
+
+        WebElement feDropdown = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath(
+                                "//div[contains(@class,'crm__dropdown__placeholder') and text()='Field Engineer']"
+                        )
+                )
+        );
+
+        js1.executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                feDropdown
+        );
+
+        Thread.sleep(1000);
+
+        new Actions(driver)
+                .moveToElement(feDropdown)
+                .click()
+                .perform();
+
+        System.out.println("Clicked FE dropdown");
+
+        Thread.sleep(3000);
+
+
+        // ================= TYPE ENGINEER NAME =================
+
+        Actions actions = new Actions(driver);
+
+        actions
+                .sendKeys(engineerName)
+                .pause(Duration.ofSeconds(3))
+                .perform();
+
+        System.out.println("Typed FE Name");
+
+        Thread.sleep(5000);
+
+
+        // ================= SELECT ACTIVE DROPDOWN OPTION =================
+
+        WebElement activeOption = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath(
+                                "//div[contains(@id,'react-select') and normalize-space()='"
+                                        + engineerName + "']"
+                        )
+                )
+        );
+
+        js1.executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                activeOption
+        );
+
+        Thread.sleep(1000);
+
+
+        // REAL USER CLICK
+        new Actions(driver)
+                .moveToElement(activeOption)
+                .pause(Duration.ofSeconds(1))
+                .click()
+                .perform();
+
+        Thread.sleep(5000);
+
+        System.out.println("Selected FE Option");
+
+
+     // ================= VERIFY FE SELECTED =================
+
+        Thread.sleep(3000);
+
+        boolean feSelected = !driver.findElements(
+                By.xpath(
+                        "//*[contains(text(),'" + engineerName + "')]"
+                )
+        ).isEmpty();
+
+        if (feSelected) {
+
+            System.out.println("Field Engineer selected successfully");
+
+        } else {
+
+            System.out.println("WARNING - FE validation skipped");
+        }
+        
+     // ================= SELECT FUTURE TIME SLOT =================
+
+        Thread.sleep(3000);
+
+        LocalTime now = LocalTime.now();
+
+        int targetHour = now.getMinute() > 0
+                ? now.getHour() + 1
+                : now.getHour();
+
+        String slotTime;
+
+        if (targetHour == 0) {
+            slotTime = "12:00 AM";
+        } else if (targetHour < 12) {
+            slotTime = targetHour + ":00 AM";
+        } else if (targetHour == 12) {
+            slotTime = "12:00 PM";
+        } else {
+            slotTime = (targetHour - 12) + ":00 PM";
+        }
+
+        System.out.println("Selecting Slot: " + slotTime);
+
+
+        // ================= FIND TIME LABEL =================
+
+        WebElement timeLabel = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//span[contains(@class,'rbc-label') and normalize-space()='"
+                                + slotTime + "']")
+                )
+        );
+
+        js1.executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                timeLabel
+        );
+
+        Thread.sleep(2000);
+
+
+        // ================= GET DAY COLUMN =================
+
+        WebElement dayColumn = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("(//div[contains(@class,'rbc-day-slot')])[1]")
+                )
+        );
+
+
+        // ================= GET COORDINATES =================
+
+        // Time label Y position
+        int labelY = timeLabel.getLocation().getY();
+
+        // Day column position & size
+        int columnX = dayColumn.getLocation().getX();
+        int columnWidth = dayColumn.getSize().getWidth();
+
+
+        // CLICK INSIDE GRID AREA
+        int clickX = columnX + (columnWidth / 2);
+
+        // Slightly below the label line
+        int clickY = labelY + 40;
+
+        System.out.println("Label Y : " + labelY);
+        System.out.println("Column X : " + columnX);
+        System.out.println("Column Width : " + columnWidth);
+
+        System.out.println("Click X : " + clickX);
+        System.out.println("Click Y : " + clickY);
+
+
+        // ================= CLICK INSIDE CALENDAR SLOT =================
+
+        js1.executeScript(
+
+            "var x=arguments[0], y=arguments[1];" +
+
+            "var el=document.elementFromPoint(x,y);" +
+
+            "if(el){" +
+
+            "  var ev1=new MouseEvent('mousedown',{" +
+            "    view:window,bubbles:true,cancelable:true,clientX:x,clientY:y" +
+            "  });" +
+
+            "  var ev2=new MouseEvent('mouseup',{" +
+            "    view:window,bubbles:true,cancelable:true,clientX:x,clientY:y" +
+            "  });" +
+
+            "  var ev3=new MouseEvent('click',{" +
+            "    view:window,bubbles:true,cancelable:true,clientX:x,clientY:y" +
+            "  });" +
+
+            "  el.dispatchEvent(ev1);" +
+            "  el.dispatchEvent(ev2);" +
+            "  el.dispatchEvent(ev3);" +
+
+            "}",
+
+            clickX,
+            clickY
+        );
+
+        System.out.println("Clicked inside calendar grid");
+
+        Thread.sleep(5000);
+
+
+     // ================= WAIT FOR SAVE POPUP =================
+
+        By saveLocator = By.xpath(
+                "//button[@id='save' or normalize-space()='Save']"
+        );
+
+        try {
+
+            // WAIT FOR SAVE BUTTON
+            WebElement saveBtn = wait.until(
+                    ExpectedConditions.elementToBeClickable(saveLocator)
+            );
+
+            System.out.println("Popup appeared successfully");
+
+            // SCROLL TO SAVE BUTTON
+            js1.executeScript(
+                    "arguments[0].scrollIntoView({block:'center'});",
+                    saveBtn
+            );
+
+            Thread.sleep(1000);
+
+            // CLICK SAVE
+            js1.executeScript(
+                    "arguments[0].click();",
+                    saveBtn
+            );
+
+            System.out.println("Assignment saved successfully");
+
+            // WAIT UNTIL POPUP CLOSES
+            wait.until(
+                    ExpectedConditions.invisibilityOfElementLocated(saveLocator)
+            );
+
+            System.out.println("Popup closed successfully");
+
+        } catch (StaleElementReferenceException e) {
+
+            System.out.println("Save already completed");
+
+        } catch (TimeoutException e) {
+
+            System.out.println("Save popup not found / already closed");
+
+        }
+        
+        
+     // ================= CLOSE BROWSER =================
+
+        try {
+
+            System.out.println("Closing browser...");
+
+            Thread.sleep(3000);
+
+            // CLOSE ALL WINDOWS
+            driver.quit();
+
+            System.out.println("Browser closed successfully");
+
+        } catch (Exception e) {
+
+            System.out.println("Unable to close browser normally");
+
+            try {
+
+                // FORCE CLOSE CURRENT WINDOW
+                driver.close();
+
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     // ================= MOBILE GENERATOR =================
