@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TicketReport {
-
     private static final int WAIT_SEC = 20;
     private static WebDriver driver;
     private static WebDriverWait wait;
