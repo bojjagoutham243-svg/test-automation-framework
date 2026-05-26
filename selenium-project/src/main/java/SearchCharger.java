@@ -167,7 +167,8 @@ public class SearchCharger {
     // ════════════════════════════════════════════════════════════════════════
     // 4. OCPP CARD DETAIL VALIDATION  (part of left column)
     // ════════════════════════════════════════════════════════════════════════
-    private static void validateOCPPDetail() {
+    @SuppressWarnings("unused")
+	private static void validateOCPPDetail() {
         System.out.println("── [4] OCPP Card Detail ────────────────────────────");
 
         assertOCPPDateRow("OCPP Enabled Date:", "30 Sep 2025");
