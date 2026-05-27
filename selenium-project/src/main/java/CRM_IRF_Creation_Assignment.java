@@ -7,6 +7,7 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import java.io.File;
 import java.sql.*;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.time.LocalTime;
@@ -165,45 +166,109 @@ public class CRM_IRF_Creation_Assignment {
         driver.findElement(By.cssSelector(".MuiButtonBase-root.MuiSwitch-switchBase.MuiSwitch-colorPrimary.Mui-checked.PrivateSwitchBase-root.MuiSwitch-switchBase.MuiSwitch-colorPrimary.Mui-checked.Mui-checked.css-1uf4bbi")).click();
 
 
-     // ================= CHARGER SERIAL NUMBER (FINAL WORKING VALIDATION) =================
+     // ================= CHARGER SERIAL NUMBER LOGIC =================
         //
-        // Logic:
-        // If ACC scope count >= 3 → Charger Serial No. is mandatory.
-        // Otherwise → Skip.
+        // MANDATORY ONLY FOR:
         //
-        // Validation fix:
-        // Your UI selects the charger serial correctly, but the input value may remain blank.
-        // So validation checks:
-        // 1. Input value
-        // 2. Selected chip/tag
-        // 3. Mandatory error message disappearance
+        // 1. ACC + ACC + ACC
+        // 2. EXICOM + ACC + ACC
+        //
+        // OPTIONAL FOR:
+        //
+        // 1. EXICOM + EXICOM + EXICOM
+        // 2. ALL OTHER COMBINATIONS
         //
 
-        // ---------- FIND SCOPE ICONS ----------
-        List<WebElement> scopeIcons = driver.findElements(
-                By.xpath("//div[contains(@class,'crm__icon') or @aria-label]")
+        System.out.println("Checking Scope Logic...");
+
+        // ---------- GET ALL SCOPE LABELS ----------
+        List<WebElement> scopeSections = driver.findElements(
+                By.xpath("//p[contains(@class,'text__label')]")
         );
 
-        // ---------- COUNT ACC SCOPES ----------
-        int accScopeCount = 0;
+        // ---------- STORE DETECTED SCOPES ----------
+        List<String> detectedScopes = new ArrayList<>();
 
-        for (WebElement icon : scopeIcons) {
-            String aria = icon.getAttribute("aria-label");
-            String cls = icon.getAttribute("class");
+        for (WebElement scope : scopeSections) {
 
-            if ((aria != null && aria.toLowerCase().contains("acc"))
-                    || (cls != null && cls.toLowerCase().contains("account"))
-                    || (cls != null && cls.toLowerCase().contains("tatamotors"))) {
-                accScopeCount++;
+            String text = scope.getText().trim().toLowerCase();
+
+            // SURVEY = EXICOM
+            if (text.contains("survey")) {
+
+                detectedScopes.add("EXICOM");
+
+                System.out.println("Detected Scope : EXICOM");
+            }
+
+            // INSTALLATION = ACC
+            else if (text.contains("installation")) {
+
+                detectedScopes.add("ACC");
+
+                System.out.println("Detected Scope : ACC");
+            }
+
+            // COMMISSIONING = ACC
+            else if (text.contains("commissioning")) {
+
+                detectedScopes.add("ACC");
+
+                System.out.println("Detected Scope : ACC");
             }
         }
 
-        System.out.println("Detected ACC Scope Count: " + accScopeCount);
 
-        // ---------- CHARGER SERIAL LOGIC ----------
-        if (accScopeCount >= 3) {
+        // ---------- COUNT SCOPES ----------
+        int accCount = 0;
+        int exicomCount = 0;
 
-            System.out.println("Scope is ACC, ACC, ACC.");
+        for (String scope : detectedScopes) {
+
+            if (scope.equals("ACC")) {
+                accCount++;
+            }
+
+            if (scope.equals("EXICOM")) {
+                exicomCount++;
+            }
+        }
+
+        System.out.println("ACC Count : " + accCount);
+        System.out.println("EXICOM Count : " + exicomCount);
+
+
+        // ---------- EXACT CONDITIONS ----------
+
+        // ACC + ACC + ACC
+        boolean isAccAccAcc =
+                accCount == 3 && exicomCount == 0;
+
+        // EXICOM + ACC + ACC
+        boolean isExicomAccAcc =
+                accCount == 2 && exicomCount == 1;
+
+        // EXICOM + EXICOM + EXICOM
+        boolean isExicomExicomExicom =
+                exicomCount == 3 && accCount == 0;
+
+
+        // ---------- FINAL VALIDATION ----------
+        boolean chargerMandatory =
+                isAccAccAcc || isExicomAccAcc;
+
+
+        System.out.println("ACC+ACC+ACC : " + isAccAccAcc);
+        System.out.println("EXICOM+ACC+ACC : " + isExicomAccAcc);
+        System.out.println("EXICOM+EXICOM+EXICOM : " + isExicomExicomExicom);
+
+        System.out.println("Charger Mandatory : " + chargerMandatory);
+
+
+        // ================= CHARGER SERIAL NUMBER =================
+
+        if (chargerMandatory) {
+
             System.out.println("Charger Serial No. is MANDATORY.");
 
             // ---------- FIELD LOCATOR ----------
@@ -211,39 +276,50 @@ public class CRM_IRF_Creation_Assignment {
                     "//label[contains(normalize-space(),'Charger Serial No')]/following::input[1]"
             );
 
-            // ---------- LOCATE FIELD ----------
+            // ---------- WAIT FIELD ----------
             WebElement chargerField = waitForm.until(
                     ExpectedConditions.elementToBeClickable(chargerFieldLocator)
             );
 
-            // Scroll and click
+            // ---------- SCROLL ----------
             js1.executeScript(
                     "arguments[0].scrollIntoView({block:'center'});",
                     chargerField
             );
-            js1.executeScript("arguments[0].click();", chargerField);
+
+            Thread.sleep(1000);
+
+            // ---------- CLICK ----------
+            js1.executeScript(
+                    "arguments[0].click();",
+                    chargerField
+            );
 
             Thread.sleep(2000);
 
             // ---------- OPEN DROPDOWN ----------
             chargerField.sendKeys(Keys.ARROW_DOWN);
+
             Thread.sleep(1000);
 
             // ---------- SELECT FIRST OPTION ----------
             chargerField.sendKeys(Keys.ENTER);
+
             Thread.sleep(3000);
 
             // ---------- RE-LOCATE FIELD ----------
             chargerField = driver.findElement(chargerFieldLocator);
 
-            // ---------- VALIDATION 1: INPUT VALUE ----------
+            // ---------- VALIDATION 1 ----------
             String selectedValue = chargerField.getAttribute("value");
+
             if (selectedValue == null) {
                 selectedValue = "";
             }
+
             selectedValue = selectedValue.trim();
 
-            // ---------- VALIDATION 2: CHIP/TAG EXISTS ----------
+            // ---------- VALIDATION 2 ----------
             boolean chipPresent = !driver.findElements(
                     By.xpath(
                             "//*[contains(@class,'MuiChip-root') " +
@@ -252,140 +328,274 @@ public class CRM_IRF_Creation_Assignment {
                     )
             ).isEmpty();
 
-            // ---------- VALIDATION 3: REQUIRED ERROR MESSAGE DISAPPEARS ----------
+            // ---------- VALIDATION 3 ----------
             boolean mandatoryErrorPresent = !driver.findElements(
                     By.xpath(
-                            "//*[contains(text(),'Charger Serial No') and contains(text(),'required')]"
+                            "//*[contains(text(),'Charger Serial No') " +
+                            "and contains(text(),'required')]"
                     )
             ).isEmpty();
 
-            // ---------- FINAL VALIDATION ----------
-            if (!selectedValue.isEmpty() || chipPresent || !mandatoryErrorPresent) {
+            // ---------- FINAL RESULT ----------
+            if (!selectedValue.isEmpty()
+                    || chipPresent
+                    || !mandatoryErrorPresent) {
 
                 System.out.println("PASS - Charger Serial selected successfully.");
 
                 if (!selectedValue.isEmpty()) {
-                    System.out.println("Selected Charger Serial: " + selectedValue);
+
+                    System.out.println(
+                            "Selected Charger Serial : " + selectedValue
+                    );
                 }
 
             } else {
-                throw new RuntimeException("FAIL - Charger Serial not selected");
+
+                throw new RuntimeException(
+                        "FAIL - Charger Serial not selected"
+                );
             }
 
         } else {
 
-            System.out.println("Scope is NOT ACC, ACC, ACC.");
-            System.out.println("Charger Serial No. is OPTIONAL. Skipping entry.");
+            System.out.println("Charger Serial No. is OPTIONAL.");
+            System.out.println("Skipping Charger Serial Number.");
         }
      
-     // ================= COMMISSIONING REPORT UPLOAD (ACC, ACC, ACC ONLY) =================
+     // ================= COMMISSIONING REPORT UPLOAD =================
         //
-        // Logic:
-        // 1. Count ACC scope icons.
-        // 2. If ACC scope count >= 3:
-//              - Commissioning Report is mandatory.
-//              - Upload the PDF file.
-        // 3. Otherwise:
-//              - Skip upload.
+        // MANDATORY ONLY FOR:
+        //
+        // 1. ACC + ACC + ACC
+        // 2. EXICOM + ACC + ACC
+        //
+        // OPTIONAL FOR:
+        //
+        // 1. EXICOM + EXICOM + EXICOM
+        // 2. ALL OTHER COMBINATIONS
         //
 
-        // ---------- FILE PATH ----------
-        File file = new File(filePath);
+        System.out.println("Checking Commissioning Scope Logic...");
 
-        if (!file.exists()) {
-            throw new RuntimeException("File not found: " + filePath);
-        }
-
-        // ---------- FIND ALL SCOPE ICONS ----------
-        List<WebElement> scopeIconsForUpload = driver.findElements(
-                By.xpath("//div[contains(@class,'crm__icon') or @aria-label]")
+        // ---------- GET ALL SCOPE LABELS ----------
+        List<WebElement> scopeSections1 = driver.findElements(
+                By.xpath("//p[contains(@class,'text__label')]")
         );
 
-        // ---------- COUNT ACC SCOPES ----------
-        int accScopeCountForUpload = 0;
+        // ---------- STORE DETECTED SCOPES ----------
+        List<String> detectedScopes1 = new ArrayList<>();
 
-        for (WebElement icon : scopeIconsForUpload) {
+        for (WebElement scope : scopeSections1) {
 
-            String aria = icon.getAttribute("aria-label");
-            String cls = icon.getAttribute("class");
+            String text = scope.getText().trim().toLowerCase();
 
-            if ((aria != null && aria.toLowerCase().contains("acc"))
-                    || (cls != null && cls.toLowerCase().contains("account"))
-                    || (cls != null && cls.toLowerCase().contains("tatamotors"))) {
-                accScopeCountForUpload++;
+            // SURVEY = EXICOM
+            if (text.contains("survey")) {
+
+                detectedScopes1.add("EXICOM");
+
+                System.out.println("Detected Scope : EXICOM");
+            }
+
+            // INSTALLATION = ACC
+            else if (text.contains("installation")) {
+
+                detectedScopes1.add("ACC");
+
+                System.out.println("Detected Scope : ACC");
+            }
+
+            // COMMISSIONING = ACC
+            else if (text.contains("commissioning")) {
+
+                detectedScopes1.add("ACC");
+
+                System.out.println("Detected Scope : ACC");
             }
         }
 
-        System.out.println("Detected ACC Scope Count: " + accScopeCountForUpload);
 
-        // ---------- UPLOAD ONLY WHEN ACC, ACC, ACC ----------
-        if (accScopeCountForUpload >= 3) {
+        // ---------- COUNT ----------
+        int accCount1 = 0;
+        int exicomCount1 = 0;
 
-            System.out.println("Scope is ACC, ACC, ACC.");
-            System.out.println("Commissioning Report is MANDATORY.");
+        for (String scope : detectedScopes1) {
 
-            // ---------- LOCATE COMMISSIONING FILE INPUT ----------
-            // Third file input belongs to Commissioning section
-            By fileInputLocator = By.xpath("(//input[@type='file'])[3]");
+            if (scope.equals("ACC")) {
+                accCount1++;
+            }
 
-            WebElement fileInput = waitForm.until(
-                    ExpectedConditions.presenceOfElementLocated(fileInputLocator)
+            if (scope.equals("EXICOM")) {
+                exicomCount1++;
+            }
+        }
+
+        System.out.println("ACC Count : " + accCount1);
+        System.out.println("EXICOM Count : " + exicomCount1);
+
+
+        // ---------- EXACT CONDITIONS ----------
+
+        // ACC + ACC + ACC
+        boolean isAccAccAcc1 =
+                accCount1 == 3 && exicomCount1 == 0;
+
+        // EXICOM + ACC + ACC
+        boolean isExicomAccAcc1 =
+                accCount1 == 2 && exicomCount1 == 1;
+
+        // FINAL CONDITION
+        boolean commissioningMandatory =
+                isAccAccAcc1 || isExicomAccAcc1;
+
+        System.out.println("ACC+ACC+ACC : " + isAccAccAcc1);
+        System.out.println("EXICOM+ACC+ACC : " + isExicomAccAcc1);
+
+        System.out.println(
+                "Commissioning Mandatory : "
+                        + commissioningMandatory
+        );
+
+
+        // ================= FILE VALIDATION =================
+
+        File file = new File(filePath);
+
+        if (!file.exists()) {
+
+            throw new RuntimeException(
+                    "File not found : " + filePath
             );
+        }
+
+
+        // ================= COMMISSIONING UPLOAD =================
+
+        if (commissioningMandatory) {
+
+            System.out.println(
+                    "Commissioning Report is MANDATORY."
+            );
+
+            // =====================================================
+            // IMPORTANT:
+            // THIS XPATH TARGETS ONLY
+            // "Commissioning report*" SECTION
+            // =====================================================
+
+            By commissioningFileInputLocator = By.xpath(
+
+                    "//p[contains(translate(normalize-space(), " +
+                    "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'," +
+                    "'abcdefghijklmnopqrstuvwxyz')," +
+                    "'commissioning report')]" +
+
+                    "/following::input[@type='file'][1]"
+            );
+
+            // ---------- WAIT FOR INPUT ----------
+            WebElement commissioningInput = waitForm.until(
+                    ExpectedConditions.presenceOfElementLocated(
+                            commissioningFileInputLocator
+                    )
+            );
+
+            // ---------- SCROLL ----------
+            js1.executeScript(
+                    "arguments[0].scrollIntoView({block:'center'});",
+                    commissioningInput
+            );
+
+            Thread.sleep(2000);
 
             // ---------- MAKE INPUT VISIBLE ----------
             js1.executeScript(
+
                     "arguments[0].style.display='block';" +
                     "arguments[0].style.visibility='visible';" +
                     "arguments[0].style.opacity='1';" +
                     "arguments[0].removeAttribute('hidden');" +
                     "arguments[0].removeAttribute('disabled');",
-                    fileInput
+
+                    commissioningInput
             );
 
-            // ---------- UPLOAD FILE ----------
-            fileInput.sendKeys(file.getAbsolutePath());
+            Thread.sleep(1000);
 
-            System.out.println("Uploading file: " + file.getName());
+            // ---------- UPLOAD FILE ----------
+            commissioningInput.sendKeys(
+                    file.getAbsolutePath()
+            );
+
+            System.out.println(
+                    "Uploading Commissioning Report : "
+                            + file.getName()
+            );
 
             // ---------- WAIT FOR UPLOAD ----------
             Thread.sleep(8000);
 
-            // ---------- CHECK FOR ERROR MESSAGES ----------
+
+            // ================= ERROR VALIDATION =================
+
             List<WebElement> uploadErrors = driver.findElements(
+
                     By.xpath(
-                            "//*[contains(text(),'10 MB') or " +
-                            "contains(text(),'size exceeds') or " +
-                            "contains(text(),'Upload failed') or " +
-                            "contains(text(),'Invalid file') or " +
-                            "contains(text(),'unsupported')]"
+
+                            "//*[contains(text(),'10 MB') " +
+                            "or contains(text(),'size exceeds') " +
+                            "or contains(text(),'Upload failed') " +
+                            "or contains(text(),'Invalid file') " +
+                            "or contains(text(),'unsupported')]"
                     )
             );
 
             if (!uploadErrors.isEmpty()) {
+
                 throw new RuntimeException(
-                        "FAIL - Upload Error: " + uploadErrors.get(0).getText()
+
+                        "FAIL - Upload Error : "
+                                + uploadErrors.get(0).getText()
                 );
             }
 
-            // ---------- VERIFY REQUIRED ERROR MESSAGE DISAPPEARED ----------
+
+            // ================= REQUIRED VALIDATION =================
+
             List<WebElement> mandatoryErrors = driver.findElements(
+
                     By.xpath(
-                            "//*[contains(text(),'Commissioning Report') and contains(text(),'required')]"
+
+                            "//*[contains(text(),'Commissioning Report') " +
+                            "and contains(text(),'required')]"
                     )
             );
 
             if (mandatoryErrors.isEmpty()) {
-                System.out.println("PASS - Commissioning Report uploaded successfully.");
+
+                System.out.println(
+                        "PASS - Commissioning Report uploaded successfully."
+                );
+
             } else {
+
                 throw new RuntimeException(
-                        "FAIL - Upload not completed. Commissioning Report is still required."
+
+                        "FAIL - Upload not completed. " +
+                        "Commissioning Report is still required."
                 );
             }
 
         } else {
 
-            System.out.println("Scope is NOT ACC, ACC, ACC.");
-            System.out.println("Commissioning Report is OPTIONAL. Skipping upload.");
+            System.out.println(
+                    "Commissioning Report is OPTIONAL."
+            );
+
+            System.out.println(
+                    "Skipping Commissioning Report Upload."
+            );
         }
         
      // ================= CUSTOMER TYPE =================
@@ -706,7 +916,7 @@ public class CRM_IRF_Creation_Assignment {
         System.out.println("Navigated to I&C Requests");
 
 
-        // ================= SEARCH IRF USING COPIED VALUE =================
+     // ================= SEARCH IRF USING COPIED VALUE =================
 
         WebElement searchBox = wait11.until(
                 ExpectedConditions.visibilityOfElementLocated(
@@ -715,13 +925,131 @@ public class CRM_IRF_Creation_Assignment {
 
         searchBox.click();
 
-        // Paste copied value
-        searchBox.sendKeys(Keys.chord(Keys.COMMAND, "v"));
+        // CLEAR EXISTING VALUE
+        searchBox.sendKeys(Keys.chord(Keys.COMMAND, "a"));
+        searchBox.sendKeys(Keys.DELETE);
 
-        Thread.sleep(3000);
+        Thread.sleep(1000);
 
-        System.out.println("Pasted IRF into search box");
+        // PASTE IRF VALUE
+        searchBox.sendKeys(createdIRF);
 
+        Thread.sleep(4000);
+
+        System.out.println("Searched IRF : " + createdIRF);
+
+
+        // ================= CHECK IN ACTIVE LIST =================
+
+        boolean foundInActive = !driver.findElements(
+                By.xpath("//*[contains(text(),'" + createdIRF + "')]")
+        ).isEmpty();
+
+
+        // ================= IF FOUND IN ACTIVE =================
+
+        if (foundInActive) {
+
+            System.out.println("IRF found in ACTIVE list");
+            System.out.println("Assignment Flow Required");
+
+        } else {
+
+            System.out.println("IRF NOT found in ACTIVE list");
+            System.out.println("Checking CLOSED list");
+
+
+            // ================= CLICK CLOSED FILTER =================
+
+            WebElement closedFilter = wait11.until(
+                    ExpectedConditions.elementToBeClickable(
+                            By.xpath(
+                                    "//div[contains(@class,'close__ticket__icon')]"
+                            )
+                    )
+            );
+
+            js1.executeScript(
+                    "arguments[0].scrollIntoView({block:'center'});",
+                    closedFilter
+            );
+
+            Thread.sleep(1000);
+
+            js1.executeScript(
+                    "arguments[0].click();",
+                    closedFilter
+            );
+
+            System.out.println("Closed filter selected");
+
+            Thread.sleep(4000);
+
+
+            // ================= SEARCH AGAIN =================
+
+            WebElement searchBoxClosed = wait11.until(
+                    ExpectedConditions.visibilityOfElementLocated(
+                            By.id("tasks__search-box"))
+            );
+
+            searchBoxClosed.click();
+
+            searchBoxClosed.sendKeys(Keys.chord(Keys.COMMAND, "a"));
+            searchBoxClosed.sendKeys(Keys.DELETE);
+
+            Thread.sleep(1000);
+
+            searchBoxClosed.sendKeys(createdIRF);
+
+            Thread.sleep(4000);
+
+
+            // ================= CHECK CLOSED LIST =================
+
+            boolean foundInClosed = !driver.findElements(
+                    By.xpath("//*[contains(text(),'" + createdIRF + "')]")
+            ).isEmpty();
+
+
+            // ================= AUTO CLOSED =================
+
+            if (foundInClosed) {
+
+                System.out.println("IRF found in CLOSED list");
+                System.out.println("IRF AUTO CLOSED");
+                System.out.println("Skipping Assignment Flow");
+
+
+                // ================= CLOSE BROWSER =================
+
+                try {
+
+                    System.out.println("Closing browser...");
+
+                    Thread.sleep(3000);
+
+                    driver.quit();
+
+                    System.out.println("Browser closed successfully");
+
+                } catch (Exception e) {
+
+                    try {
+                        driver.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                return;
+
+            } else {
+
+                throw new RuntimeException(
+                        "IRF not found in ACTIVE or CLOSED list"
+                );
+            }
+        }
 
         // ================= CLICK CREATED IRF =================
 
