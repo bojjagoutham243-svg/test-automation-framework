@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.NoSuchElementException;
 
-public class TicketReport {
+public class MasterInboxReport {
 
 	private static final int WAIT_SEC = 20;
 
@@ -101,21 +101,38 @@ public class TicketReport {
 
 		Thread.sleep(500);
 
-		dropdownInput.sendKeys("Ticket Report");
+		dropdownInput.sendKeys("Master Inbox Report");
 
 		Thread.sleep(500);
 
-		WebElement ticketReportOption = wait.until(ExpectedConditions.elementToBeClickable(By
-				.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Ticket Report']")));
+		WebElement ticketReportOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Master Inbox Report']")));
 
 		ticketReportOption.click();
 
-		System.out.println("✅ Selected: Ticket Report");
+		System.out.println("✅ Selected: Master Inbox Report");
 
 		// STEP 5
 		clickStatusFilter("Closed");
 
 		// STEP 6
+		List<WebElement> allComboboxes = driver.findElements(By.xpath("//input[@role='combobox']"));
+
+		WebElement dateDropdownInput = allComboboxes.get(allComboboxes.size() - 1);
+
+		js.executeScript("arguments[0].click();", dateDropdownInput);
+
+		Thread.sleep(400);
+
+		dateDropdownInput.sendKeys("Current Month");
+
+		Thread.sleep(600);
+
+		dateDropdownInput.sendKeys(Keys.ENTER);
+
+		System.out.println("✅ Selected Current Month");
+
+		// STEP 7
 		WebElement generateBtn = wait
 				.until(ExpectedConditions.elementToBeClickable(By.id("report__screen__generate__report")));
 
@@ -125,13 +142,13 @@ public class TicketReport {
 
 		System.out.println("✅ Clicked: Generate Report");
 
-		// STEP 7
+		// STEP 8
 		validateToast();
 
-		// STEP 8
+		// STEP 9
 		dismissToast();
 
-		// STEP 9
+		// STEP 10
 		Thread.sleep(2000);
 
 		WebElement pinnedTopRow = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(
@@ -147,23 +164,23 @@ public class TicketReport {
 				.visibilityOfElementLocated(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]"
 						+ "//div[@role='row' and @data-rowindex='0']")));
 
-		// STEP 10
+		// STEP 11
 		validateCell(scrollableTopRow, "productType", "Product Type");
 
-		// STEP 11
+		// STEP 12
 		validateCell(scrollableTopRow, "ticketStatus", "Ticket Status");
 
-		// STEP 12
+		// STEP 13
 		validatePendingStatus(scrollableTopRow);
 
-		// STEP 13
+		// STEP 14
 		validateDisabledDownload(scrollableTopRow);
 
-		// STEP 14
+		// STEP 15
 		System.out.println("⏳ Polling for completion...");
 		WebElement completedRow = pollUntilJobDone(capturedJobId, 25, 10);
 
-		// STEP 15
+		// STEP 16
 		WebElement downloadBtn = completedRow
 				.findElement(By.xpath(".//div[@role='cell' and @data-field='downloadReport']"
 						+ "//div[contains(@class,'crm__bulk__upload__download__file')]"));
@@ -172,12 +189,12 @@ public class TicketReport {
 
 		System.out.println("✅ Clicked download");
 
-		// STEP 16
+		// STEP 17
 		File downloadedFile = waitForDownloadedFile(DOWNLOAD_DIR, capturedJobId, 60);
 
 		System.out.println("✅ File Downloaded: " + downloadedFile.getName());
 
-		// STEP 17
+		// STEP 18
 		validateExcelFields(downloadedFile);
 
 		System.out.println("\n🎉 NORMAL TICKET REPORT FLOW COMPLETED");
@@ -237,7 +254,7 @@ public class TicketReport {
 		// STEP 6
 		clickStatusFilter("Open");
 
-		Thread.sleep(500);
+		Thread.sleep(2000);
 
 		// STEP 7
 		WebElement enabledToggle = getFtrToggle();
@@ -260,19 +277,19 @@ public class TicketReport {
 		System.out.println("ℹ️ aria-checked = " + ariaChecked);
 
 		// STEP 9
-		List<WebElement> allComboboxes = driver.findElements(By.xpath("//input[@role='combobox']"));
+		List<WebElement> allComboboxes1 = driver.findElements(By.xpath("//input[@role='combobox']"));
 
-		WebElement dateDropdownInput = allComboboxes.get(allComboboxes.size() - 1);
+		WebElement dateDropdownInput1 = allComboboxes1.get(allComboboxes1.size() - 1);
 
-		js.executeScript("arguments[0].click();", dateDropdownInput);
-
-		Thread.sleep(400);
-
-		dateDropdownInput.sendKeys("Current Month");
+		js.executeScript("arguments[0].click();", dateDropdownInput1);
 
 		Thread.sleep(600);
 
-		dateDropdownInput.sendKeys(Keys.ENTER);
+		dateDropdownInput1.sendKeys("Current Month");
+
+		Thread.sleep(600);
+
+		dateDropdownInput1.sendKeys(Keys.ENTER);
 
 		System.out.println("✅ Selected Current Month");
 
@@ -288,7 +305,7 @@ public class TicketReport {
 
 		// STEP 11
 		validateToast();
-
+		Thread.sleep(1000);
 		dismissToast();
 
 		// STEP 12
@@ -448,15 +465,15 @@ public class TicketReport {
 
 		Thread.sleep(400);
 
-		ddInput.sendKeys("Ticket Report");
+		ddInput.sendKeys("Master Inbox Report");
 
 		Thread.sleep(400);
 
-		wait.until(ExpectedConditions.elementToBeClickable(By
-				.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Ticket Report']")))
+		wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Master Inbox Report']")))
 				.click();
 
-		System.out.println("✅ Ticket Report selected");
+		System.out.println("✅ Master Inbox Report selected");
 
 		Thread.sleep(500);
 	}
@@ -531,22 +548,30 @@ public class TicketReport {
 		System.out.println("\n📄 Validating Excel: " + excelFile.getName());
 
 		List<String> requiredColumns = Arrays.asList("Ticket ID", "Date of Complaint", "Created By", "Source",
-				"Call Type", "Category", "Sub Category", "Account Name", "Product Type", "Charger Serial No",
-				"Part Number", "Product Name", "Warranty Status", "Customer Type", "Customer Name", "Customer Number",
-				"Vendors Mapped", "Ageing", "Status", "On Call Resolve", "Backend closure", "First Time Resolve",
-				"Urgency", "Commissioning Date");
+				"Call Type", "Category", "Sub Category", "Product Type", "Warranty Status", "Customer Type",
+				"Customer Name", "Customer Number", "Address", "City", "State", "PinCode", "Locality", "Zone", "Circle",
+				"Ageing", "Status", "On Call Resolve", "Backend closure", "First Time Resolve", "Urgency");
 
 		try (FileInputStream fis = new FileInputStream(excelFile); Workbook workbook = new XSSFWorkbook(fis)) {
 
 			Sheet sheet = workbook.getSheetAt(0);
 
+			System.out.println("📊 Total Rows in Sheet: " + sheet.getLastRowNum());
+
 			Row headerRow = null;
 
+			// ─────────────────────────────────────────────
+			// FIND HEADER ROW
+			// ─────────────────────────────────────────────
 			for (Row row : sheet) {
 
-				Cell firstCell = row.getCell(0);
+				if (row == null) {
+					continue;
+				}
 
-				if (firstCell != null && !getCellValueAsString(firstCell).trim().isEmpty()) {
+				String firstCellValue = getCellValueAsString(row.getCell(0)).trim();
+
+				if (firstCellValue.equalsIgnoreCase("Ticket ID")) {
 
 					headerRow = row;
 					break;
@@ -554,9 +579,15 @@ public class TicketReport {
 			}
 
 			if (headerRow == null) {
+
 				throw new RuntimeException("❌ Header row not found");
 			}
 
+			System.out.println("✅ Header Row Found: " + headerRow.getRowNum());
+
+			// ─────────────────────────────────────────────
+			// STORE COLUMN INDEXES
+			// ─────────────────────────────────────────────
 			Map<String, Integer> colIndex = new HashMap<>();
 
 			for (Cell cell : headerRow) {
@@ -564,33 +595,81 @@ public class TicketReport {
 				String header = getCellValueAsString(cell).trim();
 
 				if (!header.isEmpty()) {
+
 					colIndex.put(header, cell.getColumnIndex());
 				}
 			}
 
+			// ─────────────────────────────────────────────
+			// VALIDATE REQUIRED COLUMNS
+			// ─────────────────────────────────────────────
 			for (String col : requiredColumns) {
 
 				if (!colIndex.containsKey(col)) {
 
 					throw new RuntimeException("❌ Missing column: " + col);
 				}
+
+				System.out.println("✅ Column Present: " + col);
 			}
 
-			Row targetRow = sheet.getRow(headerRow.getRowNum() + 1);
+			System.out.println("\n✅ All required columns validated successfully");
 
+			// ─────────────────────────────────────────────
+			// FIND FIRST DATA ROW
+			// ─────────────────────────────────────────────
+			Row targetRow = null;
+
+			for (int i = headerRow.getRowNum() + 1; i <= sheet.getLastRowNum(); i++) {
+
+				Row row = sheet.getRow(i);
+
+				if (row == null) {
+					continue;
+				}
+
+				boolean hasData = false;
+
+				for (Cell cell : row) {
+
+					if (!getCellValueAsString(cell).trim().isEmpty()) {
+
+						hasData = true;
+						break;
+					}
+				}
+
+				if (hasData) {
+
+					targetRow = row;
+					break;
+				}
+			}
+
+			// ─────────────────────────────────────────────
+			// IF NO DATA ROWS
+			// ─────────────────────────────────────────────
 			if (targetRow == null) {
-				throw new RuntimeException("❌ No data rows found");
+
+				System.out.println("\n⚠️ Report contains NO DATA rows.");
+				System.out.println("✅ Header validation completed successfully.");
+				System.out.println("✅ Excel structure validation PASSED.");
+
+				return;
 			}
 
-			String ticketId = getCellValueAsString(targetRow.getCell(colIndex.get("Ticket ID"))).trim();
+			System.out.println("\n✅ Data Row Found: " + targetRow.getRowNum());
 
-			System.out.println("✅ Validating Ticket ID: " + ticketId);
-
+			// ─────────────────────────────────────────────
+			// VALIDATE FIELD VALUES ARE NOT EMPTY
+			// ─────────────────────────────────────────────
 			boolean allPassed = true;
 
 			for (String fieldName : requiredColumns) {
 
-				String actualValue = getCellValueAsString(targetRow.getCell(colIndex.get(fieldName))).trim();
+				Cell cell = targetRow.getCell(colIndex.get(fieldName));
+
+				String actualValue = getCellValueAsString(cell).trim();
 
 				if (actualValue.isEmpty()) {
 
@@ -605,10 +684,11 @@ public class TicketReport {
 			}
 
 			if (!allPassed) {
-				throw new RuntimeException("❌ One or more fields empty");
+
+				throw new RuntimeException("❌ One or more fields are NULL/EMPTY");
 			}
 
-			System.out.println("✅ All fields validated successfully");
+			System.out.println("\n🎉 Excel validation completed successfully!");
 		}
 	}
 

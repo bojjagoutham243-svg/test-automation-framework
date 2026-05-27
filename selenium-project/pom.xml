@@ -1,179 +1,181 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.exicom</groupId>
-    <artifactId>selenium-project</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+	<groupId>com.exicom</groupId>
+	<artifactId>selenium-project</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
-    <name>selenium-project</name>
+	<name>selenium-project</name>
 
-    <!-- ====================================================== -->
-    <!-- PROPERTIES -->
-    <!-- ====================================================== -->
+	<!-- ====================================================== -->
+	<!-- PROPERTIES -->
+	<!-- ====================================================== -->
 
-    <properties>
+	<properties>
 
-        <!-- Java Version -->
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+		<!-- Java Version -->
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<maven.compiler.release>21</maven.compiler.release>
 
-        <!-- Encoding -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- Encoding -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Dependency Versions -->
-        <selenium.version>4.18.1</selenium.version>
-        <webdrivermanager.version>5.7.0</webdrivermanager.version>
-        <testng.version>7.9.0</testng.version>
-        <postgresql.version>42.7.3</postgresql.version>
-        <slf4j.version>2.0.12</slf4j.version>
+		<!-- Dependency Versions -->
+		<selenium.version>4.35.0</selenium.version>
+		<webdrivermanager.version>6.1.0</webdrivermanager.version>
+		<testng.version>7.9.0</testng.version>
+		<postgresql.version>42.7.3</postgresql.version>
+		<slf4j.version>2.0.12</slf4j.version>
+		<appium.version>9.3.0</appium.version>
 
-    </properties>
+	</properties>
 
-    <!-- ====================================================== -->
-    <!-- DEPENDENCIES -->
-    <!-- ====================================================== -->
+	<!-- ====================================================== -->
+	<!-- DEPENDENCIES -->
+	<!-- ====================================================== -->
 
-    <dependencies>
+	<dependencies>
 
-        <!-- Selenium -->
-        <dependency>
+		<!-- Selenium -->
+		<dependency>
 
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>${selenium.version}</version>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>${selenium.version}</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- WebDriverManager -->
-        <dependency>
+		<!-- WebDriverManager -->
+		<dependency>
 
-            <groupId>io.github.bonigarcia</groupId>
-            <artifactId>webdrivermanager</artifactId>
-            <version>${webdrivermanager.version}</version>
+			<groupId>io.github.bonigarcia</groupId>
+			<artifactId>webdrivermanager</artifactId>
+			<version>${webdrivermanager.version}</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- TestNG -->
-        <dependency>
+		<!-- Appium -->
+		<dependency>
 
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>${testng.version}</version>
-            <scope>test</scope>
+			<groupId>io.appium</groupId>
+			<artifactId>java-client</artifactId>
+			<version>${appium.version}</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- Apache POI -->
-        <dependency>
+		<!-- TestNG -->
+		<dependency>
 
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>5.2.5</version>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng.version}</version>
+			<scope>test</scope>
 
-        </dependency>
+		</dependency>
 
-        <dependency>
+		<!-- Apache POI -->
+		<dependency>
 
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.2.5</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- PostgreSQL -->
-        <dependency>
+		<dependency>
 
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.2.5</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- Appium -->
-        <dependency>
+		<!-- PostgreSQL -->
+		<dependency>
 
-            <groupId>io.appium</groupId>
-            <artifactId>java-client</artifactId>
-            <version>9.2.3</version>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- Log4j -->
-        <dependency>
+		<!-- Log4j -->
+		<dependency>
 
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.23.1</version>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.23.1</version>
 
-        </dependency>
+		</dependency>
 
-        <dependency>
+		<dependency>
 
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.23.1</version>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.23.1</version>
 
-        </dependency>
+		</dependency>
 
-        <!-- SLF4J -->
-        <dependency>
+		<!-- SLF4J -->
+		<dependency>
 
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
 
-        </dependency>
+		</dependency>
 
-    </dependencies>
+	</dependencies>
 
-    <!-- ====================================================== -->
-    <!-- BUILD -->
-    <!-- ====================================================== -->
+	<!-- ====================================================== -->
+	<!-- BUILD -->
+	<!-- ====================================================== -->
 
-    <build>
+	<build>
 
-        <plugins>
+		<plugins>
 
-            <!-- Maven Compiler Plugin -->
-            <plugin>
+			<!-- Maven Compiler Plugin -->
+			<plugin>
 
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
 
-                <configuration>
+				<configuration>
 
-                    <release>21</release>
+					<release>21</release>
 
-                </configuration>
+				</configuration>
 
-            </plugin>
+			</plugin>
 
-            <!-- Maven Surefire Plugin -->
-            <plugin>
+			<!-- Maven Surefire Plugin -->
+			<plugin>
 
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
 
-                <configuration>
+				<configuration>
 
-                    <suiteXmlFiles>
+					<suiteXmlFiles>
 
-                        <suiteXmlFile>testng.xml</suiteXmlFile>
+						<suiteXmlFile>testng.xml</suiteXmlFile>
 
-                    </suiteXmlFiles>
+					</suiteXmlFiles>
 
-                </configuration>
+				</configuration>
 
-            </plugin>
+			</plugin>
 
-        </plugins>
+		</plugins>
 
-    </build>
+	</build>
 
 </project>
