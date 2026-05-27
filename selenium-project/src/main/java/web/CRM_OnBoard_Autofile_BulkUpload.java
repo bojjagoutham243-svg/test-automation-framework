@@ -1,4 +1,4 @@
-package Web;
+package web;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.*;
@@ -15,14 +15,14 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.*;
 import java.io.*;
 
-public class CRM_IRF_Autofile_BulkUpload {
+public class CRM_OnBoard_Autofile_BulkUpload {
 
     // ================= TEMPLATE PATHS =================
     private static final String INDIVIDUAL_TEMPLATE =
-            "/Users/gouthambojja/Documents/AutoGenerate Template/Bulk IRF - Individual - Template.xlsx";
+            "/Users/gouthambojja/Documents/AutoGenerate Template/Bulk Upload Template_Individual Customers.xlsx";
 
     private static final String CORPORATE_TEMPLATE =
-            "/Users/gouthambojja/Documents/AutoGenerate Template/Bulk IRF - Corporate - Template.xlsx";
+            "/Users/gouthambojja/Documents/AutoGenerate Template/Bulk Upload Template_Corporate Customers.xlsx";
 
     private static final String OUTPUT_FOLDER =
             "/Users/gouthambojja/Documents/AutoGenerate Template/Generated Files/";
@@ -34,7 +34,6 @@ public class CRM_IRF_Autofile_BulkUpload {
         String chargerType = "AC";
         String accountName = "Kia India Pvt Ltd";
         String customerType = "Individual"; // Individual or Corporate
-        String circleType = "Karnataka";
         int recordCount = 5;
 
         // ================= GENERATE EXCEL FILE =================
@@ -84,7 +83,7 @@ public class CRM_IRF_Autofile_BulkUpload {
             // ================= NAVIGATION =================
             WebElement onBoardMenu = wait.until(
                     ExpectedConditions.elementToBeClickable(
-                            By.xpath("//*[contains(text(),'On Board')]")
+                            By.xpath("(//p[normalize-space()='On Boardings'])[1]")
                     )
             );
             onBoardMenu.click();
@@ -99,7 +98,7 @@ public class CRM_IRF_Autofile_BulkUpload {
             // Select I&C Requests
             WebElement icRequests = wait.until(
                     ExpectedConditions.elementToBeClickable(
-                            By.xpath("//div[contains(text(),'I&C Requests')]")
+                            By.xpath("//div[contains(text(),'On Boardings')]")
                     )
             );
             js.executeScript("arguments[0].click();", icRequests);
@@ -216,45 +215,6 @@ public class CRM_IRF_Autofile_BulkUpload {
             System.out.println("Selected Customer Type: " + customerType);
             Thread.sleep(2000);
             
-         // ================= CIRCLE TYPE =================
-
-            // Locate the Circle Type container specifically
-            WebElement circleContainer = wait.until(
-                    ExpectedConditions.presenceOfElementLocated(
-                            By.xpath("//div[@id='cricle_type']")
-                    )
-            );
-
-            // Scroll into view
-            js.executeScript(
-                    "arguments[0].scrollIntoView({block:'center'});",
-                    circleContainer
-            );
-
-            // Click the Circle Type dropdown
-            js.executeScript("arguments[0].click();", circleContainer);
-            Thread.sleep(1000);
-
-            // Locate the input field INSIDE the Circle Type container only
-            WebElement circleInput = circleContainer.findElement(
-                    By.xpath(".//input")
-            );
-
-            // Clear any existing value
-            circleInput.sendKeys(Keys.chord(Keys.COMMAND, "a"));
-            circleInput.sendKeys(Keys.DELETE);
-
-            // Enter the Circle Type value
-            circleInput.sendKeys(circleType);
-            Thread.sleep(2000);
-
-            // Select the first matching option
-            circleInput.sendKeys(Keys.ARROW_DOWN);
-            Thread.sleep(1000);
-            circleInput.sendKeys(Keys.ENTER);
-
-            System.out.println("Selected Circle Type: " + circleType);
-            Thread.sleep(2000);
             
             // ================= FILE UPLOAD =================
             File file = new File(filePath);
@@ -442,66 +402,99 @@ public class CRM_IRF_Autofile_BulkUpload {
      }
 
  // ============================================================================
- // REPLACE YOUR generateBulkIRFExcel() METHOD WITH THIS VERSION
+ // REPLACE YOUR EXISTING generateBulkIRFExcel() METHOD WITH THIS VERSION
  // ============================================================================
- // Template Structure:
- // Row 1 (index 0) -> Header Title
- // Row 2 (index 1) -> Column Names
- // Row 3 (index 2) -> First Data Row (Template Row)
- // Data generation should start from Row 3.
+ //
+ // TEMPLATE STRUCTURE:
+ //
+ // Row 1 (index 0) -> Column Titles/Header
+ // Row 2 (index 1) -> First Data Row
+ //
+ // Data generation should start from Row 2.
+ //
  // ============================================================================
 
- public static String generateBulkIRFExcel(String customerType, int recordCount) throws Exception {
+ public static String generateBulkIRFExcel(
+         String customerType,
+         int recordCount) throws Exception {
 
-     // ================= SELECT TEMPLATE =================
+     // =====================================================================
+     // SELECT TEMPLATE
+     // =====================================================================
      String templatePath;
 
      if (customerType.equalsIgnoreCase("Individual")) {
+
          templatePath = INDIVIDUAL_TEMPLATE;
+
      } else if (customerType.equalsIgnoreCase("Corporate")) {
+
          templatePath = CORPORATE_TEMPLATE;
+
      } else {
-         throw new RuntimeException("Invalid customer type: " + customerType);
+
+         throw new RuntimeException(
+                 "Invalid customer type: " + customerType);
      }
 
      File templateFile = new File(templatePath);
 
      if (!templateFile.exists()) {
-         throw new RuntimeException("Template file not found: " + templatePath);
+
+         throw new RuntimeException(
+                 "Template file not found: " + templatePath);
      }
 
-     // ================= CREATE OUTPUT DIRECTORY =================
+     // =====================================================================
+     // CREATE OUTPUT DIRECTORY
+     // =====================================================================
      File outputDir = new File(OUTPUT_FOLDER);
+
      if (!outputDir.exists()) {
          outputDir.mkdirs();
      }
 
-     // ================= OPEN TEMPLATE =================
-     FileInputStream fis = new FileInputStream(templateFile);
-     Workbook workbook = WorkbookFactory.create(fis);
-     Sheet sheet = workbook.getSheetAt(0);
+     // =====================================================================
+     // OPEN TEMPLATE
+     // =====================================================================
+     FileInputStream fis =
+             new FileInputStream(templateFile);
+
+     Workbook workbook =
+             WorkbookFactory.create(fis);
+
+     Sheet sheet =
+             workbook.getSheetAt(0);
 
      // =====================================================================
-     // TEMPLATE DATA ROW = ROW 3 (Excel Row 3 => index 2)
+     // TEMPLATE DATA ROW
+     // Row 2 => index 1
      // =====================================================================
-     Row templateRow = sheet.getRow(2);
+     Row templateRow = sheet.getRow(1);
 
      if (templateRow == null) {
-         throw new RuntimeException("Template data row (Row 3) not found.");
+
+         throw new RuntimeException(
+                 "Template row (Row 2) not found.");
      }
 
      // =====================================================================
-     // REMOVE EXISTING DATA ROWS STARTING FROM ROW 4 (index 3)
+     // REMOVE EXISTING DATA ROWS
+     //
      // KEEP:
-     // Row 1 -> Header
-     // Row 2 -> Column Names
-     // Row 3 -> Template Data Row
+     // Row 1 -> Column Titles
+     //
+     // REMOVE:
+     // Row 2 onwards
      // =====================================================================
      int lastRow = sheet.getLastRowNum();
 
-     if (lastRow > 2) {
-         for (int i = lastRow; i >= 3; i--) {
+     if (lastRow >= 1) {
+
+         for (int i = lastRow; i >= 1; i--) {
+
              Row row = sheet.getRow(i);
+
              if (row != null) {
                  sheet.removeRow(row);
              }
@@ -509,41 +502,65 @@ public class CRM_IRF_Autofile_BulkUpload {
      }
 
      // =====================================================================
-     // POPULATE FIRST RECORD INTO TEMPLATE ROW (ROW 3)
+     // CREATE FIRST DATA ROW
+     // Row 2 => index 1
      // =====================================================================
-     populateBulkIRFRow(templateRow, 1, customerType);
+     Row firstRow = sheet.createRow(1);
+
+     copyEntireRow1(
+             workbook,
+             templateRow,
+             firstRow);
+
+     populateCustomerBulkRow(
+             firstRow,
+             1,
+             customerType);
 
      // =====================================================================
-     // CREATE ADDITIONAL RECORDS STARTING FROM ROW 4 (index 3)
+     // CREATE REMAINING ROWS
      // =====================================================================
      for (int i = 2; i <= recordCount; i++) {
 
          // Row indexes:
-         // Record 1 -> Row 3 -> index 2
-         // Record 2 -> Row 4 -> index 3
-         // Record 3 -> Row 5 -> index 4
-         int rowIndex = i + 1;
+         // Record 1 -> Row 2 -> index 1
+         // Record 2 -> Row 3 -> index 2
+         // Record 3 -> Row 4 -> index 3
 
-         Row newRow = sheet.createRow(rowIndex);
+         int rowIndex = i;
 
-         // Copy style, validations, formulas
-         copyEntireRow1(workbook, templateRow, newRow);
+         Row newRow =
+                 sheet.createRow(rowIndex);
+
+         // Copy style/validation/formulas
+         copyEntireRow1(
+                 workbook,
+                 templateRow,
+                 newRow);
 
          // Populate row data
-         populateBulkIRFRow(newRow, i, customerType);
+         populateCustomerBulkRow(
+                 newRow,
+                 i,
+                 customerType);
      }
 
-     // Force formula recalculation
+     // =====================================================================
+     // FORCE FORMULA RECALCULATION
+     // =====================================================================
      workbook.setForceFormulaRecalculation(true);
 
-     // ================= SAVE FILE =================
+     // =====================================================================
+     // OUTPUT FILE NAME
+     // =====================================================================
      String timestamp =
-             new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")
+             new java.text.SimpleDateFormat(
+                     "yyyyMMdd_HHmmss")
                      .format(new java.util.Date());
 
      String outputPath =
              OUTPUT_FOLDER
-                     + "Bulk_IRF_"
+                     + "Bulk_Customer_"
                      + customerType
                      + "_"
                      + recordCount
@@ -551,181 +568,198 @@ public class CRM_IRF_Autofile_BulkUpload {
                      + timestamp
                      + ".xlsx";
 
-     FileOutputStream fos = new FileOutputStream(outputPath);
+     // =====================================================================
+     // SAVE FILE
+     // =====================================================================
+     FileOutputStream fos =
+             new FileOutputStream(outputPath);
+
      workbook.write(fos);
 
      fos.close();
      workbook.close();
      fis.close();
 
-     // ================= VALIDATE OUTPUT FILE =================
-     File generatedFile = new File(outputPath);
+     // =====================================================================
+     // VALIDATE GENERATED FILE
+     // =====================================================================
+     File generatedFile =
+             new File(outputPath);
 
      if (!generatedFile.exists()) {
-         throw new RuntimeException("Generated file not found.");
+
+         throw new RuntimeException(
+                 "Generated file not found.");
      }
 
      if (generatedFile.length() == 0) {
-         throw new RuntimeException("Generated file is empty.");
+
+         throw new RuntimeException(
+                 "Generated file is empty.");
      }
 
-     System.out.println("========================================");
-     System.out.println("Excel File Generated Successfully");
-     System.out.println("Path : " + outputPath);
-     System.out.println("Size : " + generatedFile.length() + " bytes");
-     System.out.println("Records Generated : " + recordCount);
-     System.out.println("Data Starts From : Row 3");
-     System.out.println("========================================");
+     System.out.println(
+             "========================================");
+
+     System.out.println(
+             "Excel File Generated Successfully");
+
+     System.out.println(
+             "Path : " + outputPath);
+
+     System.out.println(
+             "Size : "
+                     + generatedFile.length()
+                     + " bytes");
+
+     System.out.println(
+             "Records Generated : "
+                     + recordCount);
+
+     System.out.println(
+             "Data Starts From : Row 2");
+
+     System.out.println(
+             "========================================");
 
      return outputPath;
  }
 
+@SuppressWarnings("unused")
+private static void populateBulkIRFRow(Row newRow, int i, String customerType) {
+	
+}
+
 //============================================================================
-//REPLACE YOUR EXISTING populateBulkIRFRow() METHOD WITH THIS VERSION
-//============================================================================
-//This method supports BOTH templates:
+//FINAL METHOD
+//Supports BOTH:
 //
-//1. Individual Template
-//2. Corporate Template
+//1. Individual Customer
+//2. Corporate Customer
 //
-//Template selection is already handled by generateBulkIRFExcel()
-//using customerType.
+//Based on customerType selected.
 //
-//This method populates columns dynamically based on customerType.
+//INDIVIDUAL:
+//- SPOC fields left blank
+//
+//CORPORATE:
+//- SPOC fields populated
+//
+//Charger Serial Number is OPTIONAL -> kept blank
 //============================================================================
 
-private static void populateBulkIRFRow(Row row, int index, String customerType) {
+private static void populateCustomerBulkRow(
+      Row row,
+      int index,
+      String customerType) {
 
   Workbook workbook = row.getSheet().getWorkbook();
 
   // =====================================================================
-  // Column 0 : Reference ID
+  // Column 0 : Reference Id
   // =====================================================================
-  String referenceId = "REF" + System.currentTimeMillis() + index;
+  String referenceId =
+          "REF" + System.currentTimeMillis() + index;
+
   setCellValue(row, 0, referenceId);
 
   // =====================================================================
-  // Column 1 : Request Date (REAL DATE CELL)
+  // Column 1 : Request Date
   // =====================================================================
   Cell dateCell = row.getCell(1);
+
   if (dateCell == null) {
       dateCell = row.createCell(1);
   }
 
+  // Current Date
   dateCell.setCellValue(new java.util.Date());
 
+  // Date Format
   CellStyle dateStyle = workbook.createCellStyle();
-  DataFormat dataFormat = workbook.createDataFormat();
-  dateStyle.setDataFormat(dataFormat.getFormat("d/M/yyyy"));
+
+  DataFormat format = workbook.createDataFormat();
+
+  // Example: 18/5/2026
+  dateStyle.setDataFormat(format.getFormat("d/M/yyyy"));
+
   dateCell.setCellStyle(dateStyle);
 
   // =====================================================================
-  // Column 2 : Charger Serial Number (Optional) - Leave Blank
+  // Column 2 : Charger Serial No.
   // =====================================================================
+  // Optional field
+  // Leaving blank intentionally
 
   // =====================================================================
-  // Column 3 : Rating (in kW)
-  // =====================================================================
-  setCellValue(row, 3, "7.5");
-
-  // =====================================================================
-  // Column 4 : Survey Required
-  // =====================================================================
-  setCellValue(row, 4, "No");
-
-  // =====================================================================
-  // Column 5 : Customer/Organisation Name
+  // Column 3 : Customer Name
   // =====================================================================
   String customerName = generateCustomerName();
-  setCellValue(row, 5, customerName);
+
+  setCellValue(row, 3, customerName);
 
   // =====================================================================
-  // Common Fields
+  // Column 4 : Customer Country Code
   // =====================================================================
-  setCellValue(row, 6, "+91");                        // Primary Country Code
-  setCellValue(row, 7, generateRandomMobileNumber()); // Primary Number
-  setCellValue(row, 8, "+91");                        // Alternate Country Code
-  setCellValue(row, 9, generateRandomMobileNumber()); // Alternate Number
-  setCellValue(row, 10, "test" + index + "@mail.com");
+  setCellValue(row, 4, "+91");
 
   // =====================================================================
-  // CORPORATE TEMPLATE
+  // Column 5 : Primary No.
+  // =====================================================================
+  setCellValue(
+          row,
+          5,
+          generateRandomMobileNumber());
+
+  // =====================================================================
+  // Column 6 : Customer Email
+  // =====================================================================
+  setCellValue(
+          row,
+          6,
+          "customer" + index + "@mail.com");
+
+  // =====================================================================
+  // CORPORATE CUSTOMER
   // =====================================================================
   if (customerType.equalsIgnoreCase("Corporate")) {
 
-      // Column 11 : SPOC Name
-      setCellValue(row, 11, "SPOC" + customerName);
+      // ================================================================
+      // Column 7 : SPOC Name
+      // ================================================================
+      setCellValue(
+              row,
+              7,
+              "SPOC" + customerName);
 
-      // Column 12 : SPOC Country Code
-      setCellValue(row, 12, "+91");
+      // ================================================================
+      // Column 8 : SPOC Country Code
+      // ================================================================
+      setCellValue(row, 8, "+91");
 
-      // Column 13 : SPOC Number
-      setCellValue(row, 13, generateRandomMobileNumber());
+      // ================================================================
+      // Column 9 : SPOC No.
+      // ================================================================
+      setCellValue(
+              row,
+              9,
+              generateRandomMobileNumber());
 
-      // Column 14 : SPOC Email
-      setCellValue(row, 14, "TestSpoc@mail.com");
-
-      // Column 15 : Location Type
-      setCellValue(row, 15, "Commercial");
-
-      // Column 16 : Site Pin Code
-      setCellValue(row, 16, "560008");
-
-      // Column 17 : Site Address
-      setCellValue(row, 17, "SiteAddress" + index);
-
-      // Column 18 : Site City
-      setCellValue(row, 18, "Bengaluru");
-
-      // Column 19 : Site State
-      setCellValue(row, 19, "Karnataka");
-
-      // Column 20 : Site Country
-      setCellValue(row, 20, "India");
-
-      // Column 21 : Site Geolocation
-      setCellValue(row, 21, "12.9716,77.5946");
-
-      // Optional columns
-      // 22 Pin Code
-      // 23 Address
-      // 24 City
-      // 25 State
-      // 26 Country
+      // ================================================================
+      // Column 10 : SPOC Email
+      // ================================================================
+      setCellValue(
+              row,
+              10,
+              "spoc" + index + "@mail.com");
   }
 
   // =====================================================================
-  // INDIVIDUAL TEMPLATE
+  // INDIVIDUAL CUSTOMER
   // =====================================================================
   else {
 
-      // Column 11 : Location Type
-      setCellValue(row, 11, "Home");
-
-      // Column 12 : Site Pin Code
-      setCellValue(row, 12, "560008");
-
-      // Column 13 : Site Address
-      setCellValue(row, 13, "SiteAddress" + index);
-
-      // Column 14 : Site City
-      setCellValue(row, 14, "Bengaluru");
-
-      // Column 15 : Site State
-      setCellValue(row, 15, "Karnataka");
-
-      // Column 16 : Site Country
-      setCellValue(row, 16, "India");
-
-      // Column 17 : Site Geolocation
-      setCellValue(row, 17, "12.9716,77.5946");
-
-      // Optional columns
-      // 18 Pin Code
-      // 19 Address
-      // 20 City
-      // 21 State
-      // 22 Country
+      // Leave SPOC fields blank intentionally
   }
 }
 
