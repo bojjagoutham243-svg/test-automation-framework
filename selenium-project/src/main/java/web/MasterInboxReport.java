@@ -67,11 +67,10 @@ public class MasterInboxReport {
 		wait.until(ExpectedConditions.urlContains("dashboard"));
 
 		System.out.println("✅ Login Successful!");
-
+		Thread.sleep(1000);
 		// ═══════════════════════════════════════════════════════════════
 		// FLOW 1 : NORMAL TICKET REPORT FLOW
 		// ═══════════════════════════════════════════════════════════════
-
 		// STEP 1
 		slowScrollTo(By.xpath("//p[contains(@class,'crm__sidebar__text') and normalize-space()='Reports']"));
 
@@ -467,7 +466,7 @@ public class MasterInboxReport {
 
 		ddInput.sendKeys("Master Inbox Report");
 
-		Thread.sleep(400);
+		Thread.sleep(1000);
 
 		wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
 				"//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Master Inbox Report']")))

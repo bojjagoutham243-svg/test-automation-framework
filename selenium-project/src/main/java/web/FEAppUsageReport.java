@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.NoSuchElementException;
 
-public class TicketReport {
+public class FEAppUsageReport {
 
 	private static final int WAIT_SEC = 20;
 
@@ -67,10 +67,13 @@ public class TicketReport {
 		wait.until(ExpectedConditions.urlContains("dashboard"));
 
 		System.out.println("✅ Login Successful!");
+
 		Thread.sleep(1000);
+
 		// ═══════════════════════════════════════════════════════════════
-		// FLOW 1 : NORMAL TICKET REPORT FLOW
+		// FLOW 1 : FE APP USAGE REPORT FLOW
 		// ═══════════════════════════════════════════════════════════════
+
 		// STEP 1
 		slowScrollTo(By.xpath("//p[contains(@class,'crm__sidebar__text') and normalize-space()='Reports']"));
 
@@ -100,24 +103,30 @@ public class TicketReport {
 
 		Thread.sleep(500);
 
-		dropdownInput.sendKeys("Ticket Report");
+		dropdownInput.sendKeys("FE App Usage Report");
 
 		Thread.sleep(500);
 
-		WebElement ticketReportOption = wait.until(ExpectedConditions.elementToBeClickable(By
-				.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Ticket Report']")));
+		WebElement ticketReportOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='FE App Usage Report']")));
 
 		ticketReportOption.click();
 
-		System.out.println("✅ Selected: Ticket Report");
+		System.out.println("✅ Selected: FE App Usage Report");
 
-		// STEP 5
-		clickStatusFilter("Closed");
+		// STEP 5 - Select Organisation = All
+		selectDropdownById("react-select-4-input", "All", "Organisation");
 
-		// STEP 6
+		// STEP 6 - Select Vendor = All
+		selectDropdownById("react-select-6-input", "All", "Vendor");
+
+		// STEP 7 - Select Account = All
+		selectDropdownById("react-select-7-input", "All", "Account");
+
+		// STEP 8 - Select Current Month
 		selectCurrentMonth();
 
-		// STEP 7
+		// STEP 9
 		WebElement generateBtn = wait
 				.until(ExpectedConditions.elementToBeClickable(By.id("report__screen__generate__report")));
 
@@ -127,13 +136,13 @@ public class TicketReport {
 
 		System.out.println("✅ Clicked: Generate Report");
 
-		// STEP 8
+		// STEP 10
 		validateToast();
 
-		// STEP 9
+		// STEP 11
 		dismissToast();
 
-		// STEP 10
+		// STEP 12
 		Thread.sleep(2000);
 
 		WebElement pinnedTopRow = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(
@@ -149,188 +158,60 @@ public class TicketReport {
 				.visibilityOfElementLocated(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]"
 						+ "//div[@role='row' and @data-rowindex='0']")));
 
-		// STEP 11
+		// STEP 13
 		validateCell(scrollableTopRow, "productType", "Product Type");
 
-		// STEP 12
-		validateCell(scrollableTopRow, "ticketStatus", "Ticket Status");
-
-		// STEP 13
-		validatePendingStatus(scrollableTopRow);
-
 		// STEP 14
-		validateDisabledDownload(scrollableTopRow);
+		validateJobStatusCell(scrollableTopRow);
 
 		// STEP 15
+		validatePendingStatus(scrollableTopRow);
+
+		// STEP 16 ← get the rowindex string first, then pass it
+		String topRowIndex = scrollableTopRow.getAttribute("data-rowindex");
+		validateDisabledDownload(topRowIndex);
+
+		// STEP 17
 		System.out.println("⏳ Polling for completion...");
 		WebElement completedRow = pollUntilJobDone(capturedJobId, 25, 10);
 
-		// STEP 16
-		WebElement downloadBtn = completedRow
-				.findElement(By.xpath(".//div[@role='cell' and @data-field='downloadReport']"
-						+ "//div[contains(@class,'crm__bulk__upload__download__file')]"));
+		// STEP 18 - Click download on completed row
+		String completedRowIndex = completedRow.getAttribute("data-rowindex");
 
-		js.executeScript("arguments[0].click();", downloadBtn);
+		// Scroll right so downloadReport column enters the virtual render zone
+		WebElement scroller18 = driver.findElement(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScroller')]"));
+		js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scroller18);
+		Thread.sleep(800);
 
+		WebElement downloadCell = wait.until(ExpectedConditions
+				.presenceOfElementLocated(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]"
+						+ "//div[@role='row' and @data-rowindex='" + completedRowIndex + "']"
+						+ "//div[@role='cell' and @data-field='downloadReport']")));
+
+		WebElement downloadIconDiv = downloadCell
+				.findElement(By.xpath(".//button[@type='button']/div[contains(@class,'crm__icon')]"));
+
+		String downloadClass = downloadIconDiv.getAttribute("class");
+		System.out.println("ℹ️ Download icon class on completed row: " + downloadClass);
+
+		if (downloadClass == null || downloadClass.contains("disabled")) {
+			throw new RuntimeException("❌ Download icon is still disabled on Completed row. Class: " + downloadClass);
+		}
+
+		js.executeScript("arguments[0].click();", downloadIconDiv);
 		System.out.println("✅ Clicked download");
 
-		// STEP 17
+		// STEP 19
 		File downloadedFile = waitForDownloadedFile(DOWNLOAD_DIR, capturedJobId, 60);
 
 		System.out.println("✅ File Downloaded: " + downloadedFile.getName());
 
-		// STEP 18
+		// STEP 20
 		validateExcelFields(downloadedFile);
 
-		System.out.println("\n🎉 NORMAL TICKET REPORT FLOW COMPLETED");
-
-		// ═══════════════════════════════════════════════════════════════
-		// FLOW 2 : FTR TOGGLE FLOW
-		// ═══════════════════════════════════════════════════════════════
-
-		System.out.println("\n══════════════════════════════════════");
-		System.out.println("🚀 STARTING FTR TOGGLE FLOW");
-		System.out.println("══════════════════════════════════════");
-
-		// STEP 1
-		driver.navigate().refresh();
+		System.out.println("\n🎉 FE APP USAGE REPORT FLOW COMPLETED");
 
 		Thread.sleep(2000);
-
-		navigateToTicketReport();
-
-		// STEP 2
-		System.out.println("🔍 Checking FTR toggle in default state");
-
-		WebElement ftrToggleInitial = getFtrToggle();
-
-		if (!isFtrToggleDisabled(ftrToggleInitial)) {
-			throw new RuntimeException("❌ FTR toggle should be DISABLED initially.");
-		}
-
-		System.out.println("✅ FTR toggle is disabled initially");
-
-		// STEP 3
-		try {
-			js.executeScript("arguments[0].click();", ftrToggleInitial);
-			Thread.sleep(300);
-		} catch (Exception e) {
-			System.out.println("ℹ️ Click ignored as expected");
-		}
-
-		if (!isFtrToggleDisabled(getFtrToggle())) {
-			throw new RuntimeException("❌ FTR toggle became enabled unexpectedly.");
-		}
-
-		System.out.println("✅ Disabled toggle remained disabled");
-
-		// STEP 4
-		clickStatusFilter("Closed");
-
-		// STEP 5
-		WebElement ftrAfterClosed = getFtrToggle();
-
-		if (!isFtrToggleDisabled(ftrAfterClosed)) {
-			throw new RuntimeException("❌ FTR toggle should remain disabled.");
-		}
-
-		System.out.println("✅ FTR toggle still disabled");
-
-		// STEP 6
-		clickStatusFilter("Open");
-
-		Thread.sleep(500);
-
-		// STEP 7
-		WebElement enabledToggle = getFtrToggle();
-
-		if (isFtrToggleDisabled(enabledToggle)) {
-			throw new RuntimeException("❌ FTR toggle should now be enabled.");
-		}
-
-		System.out.println("✅ FTR toggle enabled");
-
-		// STEP 8
-		js.executeScript("arguments[0].click();", enabledToggle);
-
-		Thread.sleep(500);
-
-		System.out.println("✅ FTR toggle turned ON");
-
-		String ariaChecked = enabledToggle.getAttribute("aria-checked");
-
-		System.out.println("ℹ️ aria-checked = " + ariaChecked);
-
-		// STEP 9
-		selectCurrentMonth();
-
-		// STEP 10
-		WebElement generateBtnFTR = wait
-				.until(ExpectedConditions.elementToBeClickable(By.id("report__screen__generate__report")));
-
-		slowScrollTo(By.id("report__screen__generate__report"));
-
-		generateBtnFTR.click();
-
-		System.out.println("✅ Clicked Generate Report");
-
-		// STEP 11
-		validateToast();
-		Thread.sleep(600);
-		dismissToast();
-
-		// STEP 12
-		Thread.sleep(2000);
-
-		WebElement pinnedTopRowFTR = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(
-				"//div[contains(@class,'MuiDataGrid-pinnedColumns')]" + "//div[@role='row' and @data-rowindex='0']")));
-
-		String ftrJobId = pinnedTopRowFTR.findElement(By.xpath(
-				".//div[@role='cell' and @data-field='jobId']" + "//div[contains(@class,'MuiDataGrid-cellContent')]"))
-				.getAttribute("title").trim();
-
-		System.out.println("✅ FTR Job ID: " + ftrJobId);
-
-		// STEP 13
-		WebElement scrollableFtrRow = wait.until(ExpectedConditions
-				.visibilityOfElementLocated(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]"
-						+ "//div[@role='row' and @data-rowindex='0']")));
-
-		WebElement ftrCell = scrollableFtrRow
-				.findElement(By.xpath(".//div[@role='cell' and @data-field='isFirstTimeResolution']"));
-
-		String ftrValue = ftrCell.findElement(By.className("ticket_date")).getText().trim();
-
-		if (!"Yes".equalsIgnoreCase(ftrValue)) {
-			throw new RuntimeException("❌ FTR value expected Yes but got: " + ftrValue);
-		}
-
-		System.out.println("✅ Validated FTR value = Yes");
-
-		// STEP 14
-		WebElement completedFtrRow = pollUntilJobDone(ftrJobId, 25, 7);
-
-		// STEP 15
-		WebElement ftrDownloadBtn = completedFtrRow
-				.findElement(By.xpath(".//div[@role='cell' and @data-field='downloadReport']"
-						+ "//div[contains(@class,'crm__bulk__upload__download__file')]"));
-
-		js.executeScript("arguments[0].click();", ftrDownloadBtn);
-
-		System.out.println("✅ Download clicked for FTR report");
-
-		// STEP 16
-		File ftrDownloadedFile = waitForDownloadedFile(DOWNLOAD_DIR, ftrJobId, 60);
-
-		System.out.println("✅ FTR File Downloaded: " + ftrDownloadedFile.getName());
-
-		// STEP 17
-		validateExcelFields(ftrDownloadedFile);
-
-		System.out.println("\n🎉 COMPLETE FLOW EXECUTED SUCCESSFULLY!");
-
-		Thread.sleep(2000);
-
 		driver.quit();
 	}
 
@@ -338,11 +219,41 @@ public class TicketReport {
 	// HELPER METHODS
 	// ═══════════════════════════════════════════════════════════════
 
+	private static void selectDropdownById(String inputId, String value, String label) throws InterruptedException {
+
+		WebElement input = wait.until(ExpectedConditions.elementToBeClickable(By.id(inputId)));
+
+		js.executeScript("arguments[0].scrollIntoView({behavior:'smooth', block:'center'});", input);
+
+		Thread.sleep(400);
+
+		js.executeScript("arguments[0].click();", input);
+
+		Thread.sleep(400);
+
+		input.sendKeys(value);
+
+		Thread.sleep(500);
+
+		WebElement option = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option')" + " and normalize-space(text())='" + value + "']")));
+
+		option.click();
+
+		System.out.println("✅ Selected " + label + ": " + value);
+
+		Thread.sleep(500);
+	}
+
 	private static void selectCurrentMonth() throws InterruptedException {
 
 		List<WebElement> allComboboxes = driver.findElements(By.xpath("//input[@role='combobox']"));
 
 		WebElement dateDropdownInput = allComboboxes.get(allComboboxes.size() - 1);
+
+		js.executeScript("arguments[0].scrollIntoView({behavior:'smooth', block:'center'});", dateDropdownInput);
+
+		Thread.sleep(400);
 
 		js.executeScript("arguments[0].click();", dateDropdownInput);
 
@@ -352,8 +263,8 @@ public class TicketReport {
 
 		Thread.sleep(600);
 
-		WebElement currentMonthOption = wait.until(ExpectedConditions.elementToBeClickable(By
-				.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Current Month']")));
+		WebElement currentMonthOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option')" + " and normalize-space(text())='Current Month']")));
 
 		currentMonthOption.click();
 
@@ -386,6 +297,10 @@ public class TicketReport {
 		wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector("div.Toastify__toast-container")));
 	}
 
+	// ─────────────────────────────────────────────────────────────
+	// For plain text cells that use MuiDataGrid-cellContent wrapper
+	// e.g. productType, jobId, reportType, etc.
+	// ─────────────────────────────────────────────────────────────
 	private static void validateCell(WebElement row, String field, String label) {
 
 		WebElement cell = row.findElement(By.xpath(".//div[@role='cell' and @data-field='" + field + "']"
@@ -394,6 +309,22 @@ public class TicketReport {
 		String value = cell.getAttribute("title").trim();
 
 		System.out.println("✅ " + label + ": " + value);
+	}
+
+	// ─────────────────────────────────────────────────────────────
+	// For jobStatus cell — uses crm__table__status__wrap widget,
+	// NOT MuiDataGrid-cellContent. Reads <p id="labelXxx"> text.
+	// ─────────────────────────────────────────────────────────────
+	private static void validateJobStatusCell(WebElement row) {
+
+		WebElement statusCell = row.findElement(By.xpath(".//div[@role='cell' and @data-field='jobStatus']"));
+
+		// Reads whichever label is present: labelPending / labelCompleted / labelFailed
+		WebElement statusLabel = statusCell.findElement(By.xpath(".//p[starts-with(@id,'label')]"));
+
+		String statusText = statusLabel.getText().trim();
+
+		System.out.println("✅ Job Status: " + statusText);
 	}
 
 	private static void validatePendingStatus(WebElement row) {
@@ -407,15 +338,33 @@ public class TicketReport {
 		}
 	}
 
-	private static void validateDisabledDownload(WebElement row) {
+	private static void validateDisabledDownload(String rowIndex) throws InterruptedException {
 
-		List<WebElement> disabledDownload = row
-				.findElements(By.xpath(".//div[contains(@class,'crm__bulk__upload__disabled__download__file')]"));
+		// 1. Scroll the virtualScroller horizontally so the downloadReport column
+		// renders
+		WebElement scroller = driver.findElement(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScroller')]"));
+		js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth;", scroller);
+		Thread.sleep(800); // allow column to render after horizontal scroll
 
-		if (!disabledDownload.isEmpty()) {
+		// 2. Now wait for the cell — it should be in the DOM after scrolling
+		WebElement downloadCell = wait.until(ExpectedConditions
+				.presenceOfElementLocated(By.xpath("//div[contains(@class,'MuiDataGrid-virtualScrollerRenderZone')]"
+						+ "//div[@role='row' and @data-rowindex='" + rowIndex + "']"
+						+ "//div[@role='cell' and @data-field='downloadReport']")));
+
+		WebElement button = downloadCell.findElement(By.xpath(".//button[@type='button']"));
+
+		WebElement iconDiv = button.findElement(By.xpath("./div[contains(@class,'crm__icon')]"));
+
+		String iconClass = iconDiv.getAttribute("class");
+
+		if (iconClass != null && iconClass.contains("crm__bulk__upload__disabled__download__file")) {
 			System.out.println("✅ Download disabled for Pending");
+		} else if (iconClass != null && iconClass.contains("crm__bulk__upload__download__file")) {
+			throw new RuntimeException(
+					"❌ Download is ENABLED — expected DISABLED for Pending status. Class: " + iconClass);
 		} else {
-			throw new RuntimeException("❌ Disabled download icon not found");
+			throw new RuntimeException("❌ Unexpected download icon class: " + iconClass);
 		}
 	}
 
@@ -458,15 +407,15 @@ public class TicketReport {
 
 		Thread.sleep(400);
 
-		ddInput.sendKeys("Ticket Report");
+		ddInput.sendKeys("FE App Usage Report");
 
 		Thread.sleep(1000);
 
-		wait.until(ExpectedConditions.elementToBeClickable(By
-				.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='Ticket Report']")))
+		wait.until(ExpectedConditions.elementToBeClickable(By.xpath(
+				"//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='FE App Usage Report']")))
 				.click();
 
-		System.out.println("✅ Ticket Report selected");
+		System.out.println("✅ FE App Usage Report selected");
 
 		Thread.sleep(500);
 	}
@@ -540,24 +489,27 @@ public class TicketReport {
 
 		System.out.println("\n📄 Validating Excel: " + excelFile.getName());
 
-		List<String> requiredColumns = Arrays.asList("Ticket ID", "Date of Complaint", "Created By", "Source",
-				"Call Type", "Category", "Sub Category", "Account Name", "Product Type", "Charger Serial No",
-				"Part Number", "Product Name", "Warranty Status", "Customer Type", "Customer Name", "Customer Number",
-				"Vendors Mapped", "Ageing", "Status", "On Call Resolve", "Backend closure", "First Time Resolve",
-				"Urgency");
+		List<String> notNullColumns = Arrays.asList("Field Engineer", "Role", "Circle", "Checkin Count", "Usage");
+
+		List<String> allReportColumns = Arrays.asList("Field Engineer", "Role", "Organisation", "Circle", "Circle Head",
+				"Checkin Count", "Usage", "Last Checkin", "Pending Requests", "Closed Requests", "Hold Requests");
 
 		try (FileInputStream fis = new FileInputStream(excelFile); Workbook workbook = new XSSFWorkbook(fis)) {
 
 			Sheet sheet = workbook.getSheetAt(0);
 
+			System.out.println("📊 Total Rows in Sheet: " + sheet.getLastRowNum());
+
 			Row headerRow = null;
 
 			for (Row row : sheet) {
 
-				Cell firstCell = row.getCell(0);
+				if (row == null)
+					continue;
 
-				if (firstCell != null && !getCellValueAsString(firstCell).trim().isEmpty()) {
+				String firstCellValue = getCellValueAsString(row.getCell(0)).trim();
 
+				if (firstCellValue.equalsIgnoreCase("Field Engineer")) {
 					headerRow = row;
 					break;
 				}
@@ -567,58 +519,127 @@ public class TicketReport {
 				throw new RuntimeException("❌ Header row not found");
 			}
 
-			Map<String, Integer> colIndex = new HashMap<>();
+			System.out.println("✅ Header Row Found at Row Index: " + headerRow.getRowNum());
+
+			Map<String, Integer> colIndex = new LinkedHashMap<>();
 
 			for (Cell cell : headerRow) {
-
 				String header = getCellValueAsString(cell).trim();
-
 				if (!header.isEmpty()) {
 					colIndex.put(header, cell.getColumnIndex());
 				}
 			}
 
-			for (String col : requiredColumns) {
+			System.out.println("📋 Detected Columns: " + colIndex.keySet());
 
+			for (String col : allReportColumns) {
 				if (!colIndex.containsKey(col)) {
+					throw new RuntimeException("❌ Missing column in header: " + col);
+				}
+				System.out.println("✅ Column Present: " + col);
+			}
 
-					throw new RuntimeException("❌ Missing column: " + col);
+			System.out.println("\n✅ All required columns validated successfully");
+
+			List<Row> dataRows = new ArrayList<>();
+
+			for (int i = headerRow.getRowNum() + 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if (row == null)
+					continue;
+
+				boolean hasData = false;
+				for (Cell cell : row) {
+					if (!getCellValueAsString(cell).trim().isEmpty()) {
+						hasData = true;
+						break;
+					}
+				}
+				if (hasData) {
+					dataRows.add(row);
 				}
 			}
 
-			Row targetRow = sheet.getRow(headerRow.getRowNum() + 1);
-
-			if (targetRow == null) {
-				throw new RuntimeException("❌ No data rows found");
+			if (dataRows.isEmpty()) {
+				System.out.println("\n⚠️ Report contains NO DATA rows.");
+				System.out.println("✅ Header validation completed successfully.");
+				System.out.println("✅ Excel structure validation PASSED.");
+				return;
 			}
 
-			String ticketId = getCellValueAsString(targetRow.getCell(colIndex.get("Ticket ID"))).trim();
+			System.out.println("✅ Total Data Rows Found: " + dataRows.size());
 
-			System.out.println("✅ Validating Ticket ID: " + ticketId);
+			System.out.println("\n🔍 Running NOT NULL check on columns: " + notNullColumns);
 
-			boolean allPassed = true;
+			boolean allNotNullPassed = true;
 
-			for (String fieldName : requiredColumns) {
+			for (Row row : dataRows) {
+				for (String fieldName : notNullColumns) {
 
-				String actualValue = getCellValueAsString(targetRow.getCell(colIndex.get(fieldName))).trim();
+					if (!colIndex.containsKey(fieldName))
+						continue;
 
-				if (actualValue.isEmpty()) {
+					Cell cell = row.getCell(colIndex.get(fieldName));
+					String actualValue = getCellValueAsString(cell).trim();
 
-					System.out.println("❌ NULL/EMPTY: " + fieldName);
-
-					allPassed = false;
-
-				} else {
-
-					System.out.println("✅ " + fieldName + " : " + actualValue);
+					if (actualValue.isEmpty()) {
+						System.out.println("❌ NULL/EMPTY at Row " + row.getRowNum() + ", Column: " + fieldName);
+						allNotNullPassed = false;
+					}
 				}
 			}
 
-			if (!allPassed) {
-				throw new RuntimeException("❌ One or more fields empty");
+			if (!allNotNullPassed) {
+				throw new RuntimeException("❌ NOT NULL check FAILED — one or more required fields are NULL/EMPTY");
 			}
 
-			System.out.println("✅ All fields validated successfully");
+			System.out.println("✅ NOT NULL check PASSED for all rows");
+
+			System.out.println("\n📊 ===== FULL REPORT DATA =====\n");
+
+			Map<String, Integer> colWidths = new LinkedHashMap<>();
+			for (String col : allReportColumns) {
+				colWidths.put(col, col.length());
+			}
+			for (Row row : dataRows) {
+				for (String col : allReportColumns) {
+					if (!colIndex.containsKey(col))
+						continue;
+					Cell cell = row.getCell(colIndex.get(col));
+					int len = getCellValueAsString(cell).trim().length();
+					colWidths.put(col, Math.max(colWidths.get(col), len));
+				}
+			}
+
+			StringBuilder separator = new StringBuilder("+");
+			for (String col : allReportColumns) {
+				separator.append("-".repeat(colWidths.get(col) + 2)).append("+");
+			}
+
+			System.out.println(separator);
+			StringBuilder headerLine = new StringBuilder("|");
+			for (String col : allReportColumns) {
+				headerLine.append(String.format(" %-" + colWidths.get(col) + "s |", col));
+			}
+			System.out.println(headerLine);
+			System.out.println(separator);
+
+			for (Row row : dataRows) {
+				StringBuilder rowLine = new StringBuilder("|");
+				for (String col : allReportColumns) {
+					String value = "";
+					if (colIndex.containsKey(col)) {
+						value = getCellValueAsString(row.getCell(colIndex.get(col))).trim();
+					}
+					rowLine.append(String.format(" %-" + colWidths.get(col) + "s |", value));
+				}
+				System.out.println(rowLine);
+			}
+
+			System.out.println(separator);
+			System.out.println("📊 Total Rows Printed: " + dataRows.size());
+
+			System.out.println("\n🎉 Excel validation completed successfully!");
 		}
 	}
 
@@ -665,14 +686,11 @@ public class TicketReport {
 			WebElement row = scrollableRows.get(0);
 
 			if (!row.findElements(By.xpath(".//p[@id='labelFailed']")).isEmpty()) {
-
 				throw new RuntimeException("❌ Job FAILED");
 			}
 
 			if (!row.findElements(By.xpath(".//p[@id='labelCompleted']")).isEmpty()) {
-
 				System.out.println("✅ Job COMPLETED");
-
 				return row;
 			}
 

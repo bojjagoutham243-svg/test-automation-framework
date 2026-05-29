@@ -68,11 +68,11 @@ public class INCReport {
 		wait.until(ExpectedConditions.urlContains("dashboard"));
 
 		System.out.println("✅ Login Successful!");
+		Thread.sleep(1000);
 
 		// ═══════════════════════════════════════════════════════════════
 		// FLOW 1 : I&C REPORT FLOW
 		// ═══════════════════════════════════════════════════════════════
-
 		System.out.println("\n══════════════════════════════════════");
 		System.out.println("🚀 STARTING I&C REPORT FLOW");
 		System.out.println("══════════════════════════════════════");
@@ -98,7 +98,7 @@ public class INCReport {
 
 		// STEP 5 – Validate toast message
 		validateToast();
-
+		Thread.sleep(1000);
 		// STEP 6 – Dismiss toast
 		dismissToast();
 
@@ -277,7 +277,7 @@ public class INCReport {
 
 		ddInput.sendKeys("I&C Report");
 
-		Thread.sleep(500);
+		Thread.sleep(1000);
 
 		WebElement incReportOption = wait.until(ExpectedConditions.elementToBeClickable(
 				By.xpath("//div[contains(@class,'crm__dropdown__option') and normalize-space(text())='I&C Report']")));
