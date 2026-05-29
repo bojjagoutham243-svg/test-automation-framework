@@ -368,6 +368,7 @@ public class FEAppUsageReport {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static void clickStatusFilter(String label) throws InterruptedException {
 
 		By outerLocator = By.xpath("//div[contains(@class,'reports__square__box__with__inside__text')"
@@ -420,6 +421,7 @@ public class FEAppUsageReport {
 		Thread.sleep(500);
 	}
 
+	@SuppressWarnings("unused")
 	private static WebElement getFtrToggle() {
 
 		List<WebElement> byAriaLabel = driver
@@ -444,6 +446,7 @@ public class FEAppUsageReport {
 		throw new RuntimeException("❌ FTR toggle not found");
 	}
 
+	@SuppressWarnings("unused")
 	private static boolean isFtrToggleDisabled(WebElement toggle) {
 
 		String ariaDisabled = toggle.getAttribute("aria-disabled");
