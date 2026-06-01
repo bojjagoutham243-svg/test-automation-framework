@@ -421,42 +421,6 @@ public class FEAppUsageReport {
 		Thread.sleep(500);
 	}
 
-	@SuppressWarnings("unused")
-	private static WebElement getFtrToggle() {
-
-		List<WebElement> byAriaLabel = driver
-				.findElements(By.xpath("//input[@type='checkbox' and @aria-label='customized switch']"));
-
-		if (!byAriaLabel.isEmpty()) {
-			return byAriaLabel.get(0);
-		}
-
-		List<WebElement> bySwitch = driver.findElements(By.xpath("//span[contains(@class,'MuiSwitch-switchBase')]"));
-
-		if (!bySwitch.isEmpty()) {
-			return bySwitch.get(0);
-		}
-
-		List<WebElement> anySwitch = driver.findElements(By.xpath("//*[@role='switch']"));
-
-		if (!anySwitch.isEmpty()) {
-			return anySwitch.get(0);
-		}
-
-		throw new RuntimeException("❌ FTR toggle not found");
-	}
-
-	@SuppressWarnings("unused")
-	private static boolean isFtrToggleDisabled(WebElement toggle) {
-
-		String ariaDisabled = toggle.getAttribute("aria-disabled");
-		String disabled = toggle.getAttribute("disabled");
-		String classList = toggle.getAttribute("class");
-
-		return "true".equalsIgnoreCase(ariaDisabled) || disabled != null
-				|| (classList != null && classList.contains("Mui-disabled"));
-	}
-
 	private static File waitForDownloadedFile(String downloadDir, String jobId, int timeoutSec)
 			throws InterruptedException {
 
